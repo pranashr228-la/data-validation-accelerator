@@ -60,3 +60,15 @@ def test_validate_config_checks_connection_reference():
     config.datasets[0].source.connection = "does_not_exist"
     with pytest.raises(ConfigValidationError):
         validate_config(config)
+
+
+def test_validate_config_rejects_empty_allowed_values():
+    from dva.config.models import DataQualityRule
+
+    config = load_config("configs/examples/postgres_to_snowflake_table.yaml")
+    config.datasets[0].validations.data_quality.enabled = True
+    config.datasets[0].validations.data_quality.rules = [
+        DataQualityRule(name="status_check", type="allowed_values", column="status", values=[])
+    ]
+    with pytest.raises(ConfigValidationError, match="allowed_values"):
+        validate_config(config)

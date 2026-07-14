@@ -45,8 +45,6 @@ def run_dataset(
                     dataset_name=dataset.name, message=f"Dataset run failed: {exc}",
                 )
             )
-        if run.config.execution.fail_fast:
-            raise
 
     new_rule_results = run.report.rule_results[rule_count_before:]
     if dataset_status != "ERROR":

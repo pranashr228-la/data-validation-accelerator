@@ -111,3 +111,33 @@ def test_schema_contract_warns_on_extra_target_columns(tmp_path):
     assert result.status == "WARN"
     source.close()
     target.close()
+
+
+def test_schema_contract_mapping_based_checks_required_and_expected_columns(tmp_path):
+    ctx, source, target = _build_ctx(
+        tmp_path,
+        "CREATE TABLE t AS SELECT 1 AS id, 'a' AS first_name, 'b' AS last_name",
+        "CREATE TABLE t AS SELECT 1 AS id, 'a' AS customer_name",
+        primary_key=["id"],
+        compare_columns=["first_name"],
+    )
+    ctx.dataset.validations.schema_contract.mode = "mapping_based"
+    ctx.dataset.validations.schema_contract.source_required_columns = [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+    ]
+    ctx.dataset.validations.schema_contract.target_expected_columns = [
+        "id",
+        "customer_name",
+        "balance",
+    ]
+    run_schema_contract(ctx)
+    result = ctx.run.report.rule_results[-1]
+    assert result.status == "FAIL"
+    issue_types = {i.issue_type for i in ctx.run.report.validation_issues}
+    assert "source_required_columns" in issue_types
+    assert "target_expected_columns" in issue_types
+    source.close()
+    target.close()

@@ -13,8 +13,34 @@ import math
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from dva.config.models import HashDefaults
+
+
+def _java_timestamp_format_to_strftime(java_fmt: str) -> str:
+    """Convert a Java-style timestamp pattern to Python ``strftime`` format."""
+    return (
+        java_fmt.replace("yyyy", "%Y")
+        .replace("MM", "%m")
+        .replace("dd", "%d")
+        .replace("HH", "%H")
+        .replace("mm", "%M")
+        .replace("ss", "%S")
+    )
+
+
+def _format_datetime(value: datetime, hash_defaults: HashDefaults) -> str:
+    dt = value if value.tzinfo is not None else value.replace(tzinfo=ZoneInfo("UTC"))
+    if hash_defaults.timestamp_timezone:
+        dt = dt.astimezone(ZoneInfo(hash_defaults.timestamp_timezone))
+    return dt.strftime(_java_timestamp_format_to_strftime(hash_defaults.timestamp_format))
+
+
+def _format_date(value: date, hash_defaults: HashDefaults) -> str:
+    fmt = _java_timestamp_format_to_strftime(hash_defaults.timestamp_format)
+    date_fmt = fmt.split("%H")[0].rstrip(" :-") if "%H" in fmt else fmt
+    return value.strftime(date_fmt)
 
 
 def normalize_value(value: Any, hash_defaults: HashDefaults) -> str:
@@ -32,9 +58,9 @@ def normalize_value(value: Any, hash_defaults: HashDefaults) -> str:
         rounded = round(Decimal(str(value)), hash_defaults.decimal_scale)
         text = f"{rounded:.{hash_defaults.decimal_scale}f}"
     elif isinstance(value, datetime):
-        text = value.strftime("%Y-%m-%d %H:%M:%S")
+        text = _format_datetime(value, hash_defaults)
     elif isinstance(value, date):
-        text = value.strftime("%Y-%m-%d 00:00:00")
+        text = _format_date(value, hash_defaults)
     else:
         text = str(value)
         if hash_defaults.trim_strings:

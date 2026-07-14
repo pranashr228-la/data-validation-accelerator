@@ -56,5 +56,28 @@ def validate_config(config: RootConfig) -> None:
         if dataset.validations.data_quality.enabled and not dataset.validations.data_quality.rules:
             errors.append(f"{prefix}: data_quality validation enabled but no 'rules' configured")
 
+        for rule in dataset.validations.data_quality.rules:
+            if rule.type == "allowed_values" and not rule.values:
+                errors.append(
+                    f"{prefix}: data quality rule '{rule.name}' of type 'allowed_values' "
+                    "requires at least one value"
+                )
+
+        if (
+            dataset.validations.schema_contract.enabled
+            and dataset.validations.schema_contract.mode == "mapping_based"
+        ):
+            sc = dataset.validations.schema_contract
+            if not sc.source_required_columns:
+                errors.append(
+                    f"{prefix}: schema_contract mode 'mapping_based' requires "
+                    "'source_required_columns'"
+                )
+            if not sc.target_expected_columns:
+                errors.append(
+                    f"{prefix}: schema_contract mode 'mapping_based' requires "
+                    "'target_expected_columns'"
+                )
+
     if errors:
         raise ConfigValidationError("; ".join(errors))

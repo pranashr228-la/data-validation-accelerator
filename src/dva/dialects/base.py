@@ -42,9 +42,11 @@ class SQLDialect(ABC):
 
     def group_by_duplicate_keys_sql(self, base_sql: str, key_columns: list[str]) -> str:
         group_keys = ", ".join(self.quote_ident(c) for c in key_columns)
-        select_keys = ", ".join(f"{self.quote_ident(c)} AS {c}" for c in key_columns)
+        select_keys = ", ".join(
+            f"{self.quote_ident(c)} AS {self.quote_ident(c)}" for c in key_columns
+        )
         return (
-            f"SELECT {select_keys}, COUNT(*) AS duplicate_count\n"
+            f"SELECT {select_keys}, COUNT(*) AS {self.quote_ident('duplicate_count')}\n"
             f"FROM (\n{base_sql}\n) q\n"
             f"GROUP BY {group_keys}\n"
             f"HAVING COUNT(*) > 1"

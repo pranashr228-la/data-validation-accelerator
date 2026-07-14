@@ -52,7 +52,9 @@ def build_duplicate_keys_sql(
 def build_key_and_columns_sql(
     base_sql: str, columns: list[str], dialect: SQLDialect
 ) -> str:
-    cols = ", ".join(f"{dialect.quote_ident(c)} AS {c}" for c in columns)
+    cols = ", ".join(
+        f"{dialect.quote_ident(c)} AS {dialect.quote_ident(c)}" for c in columns
+    )
     return f"SELECT {cols}\nFROM (\n{base_sql}\n) q"
 
 
@@ -62,12 +64,16 @@ def build_aggregate_sql(
     metrics: list[AggregateMetric],
     dialect: SQLDialect,
 ) -> str:
-    select_parts: list[str] = [f"{dialect.quote_ident(c)} AS {c}" for c in group_by]
+    select_parts: list[str] = [
+        f"{dialect.quote_ident(c)} AS {dialect.quote_ident(c)}" for c in group_by
+    ]
     for metric in metrics:
         col = dialect.quote_ident(metric.column)
         for check in metric.checks:
             alias = f"{metric.column}__{check}"
-            select_parts.append(f"{_AGG_SQL[check].format(col=col)} AS {alias}")
+            select_parts.append(
+                f"{_AGG_SQL[check].format(col=col)} AS {dialect.quote_ident(alias)}"
+            )
     select_clause = ",\n    ".join(select_parts)
     sql = f"SELECT\n    {select_clause}\nFROM (\n{base_sql}\n) q"
     if group_by:
@@ -84,6 +90,8 @@ def build_statistical_sql(
         col = dialect.quote_ident(metric.column)
         for check in metric.checks:
             alias = f"{metric.column}__{check}"
-            select_parts.append(f"{_STAT_SQL[check].format(col=col)} AS {alias}")
+            select_parts.append(
+                f"{_STAT_SQL[check].format(col=col)} AS {dialect.quote_ident(alias)}"
+            )
     select_clause = ",\n    ".join(select_parts)
     return f"SELECT\n    {select_clause}\nFROM (\n{base_sql}\n) q"

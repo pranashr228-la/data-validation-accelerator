@@ -28,7 +28,10 @@ def _rule_sql(rule: DataQualityRule, base_sql: str, dialect: SQLDialect) -> str:
             f")"
         )
     elif rule.type == "allowed_values":
-        values = ", ".join(f"'{v}'" for v in (rule.values or []))
+        allowed = rule.values or []
+        if not allowed:
+            raise ValueError(f"rule '{rule.name}' requires at least one allowed value")
+        values = ", ".join(f"'{v.replace("'", "''")}'" for v in allowed)
         predicate = f"{col} NOT IN ({values}) AND {col} IS NOT NULL"
     elif rule.type == "range":
         conditions = []

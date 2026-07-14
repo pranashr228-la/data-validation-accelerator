@@ -109,12 +109,27 @@ def run_schema_contract(ctx: DatasetContext) -> None:
 
     _columns_exist(ctx.dataset.primary_key, source_schema_ci, "source", "primary_key_in_source")
     _columns_exist(ctx.dataset.primary_key, target_schema_ci, "target", "primary_key_in_target")
-    _columns_exist(
-        ctx.dataset.compare_columns, source_schema_ci, "source", "compare_columns_in_source"
-    )
-    _columns_exist(
-        ctx.dataset.compare_columns, target_schema_ci, "target", "compare_columns_in_target"
-    )
+
+    if config.mode == "mapping_based":
+        _columns_exist(
+            config.source_required_columns,
+            source_schema_ci,
+            "source",
+            "source_required_columns",
+        )
+        _columns_exist(
+            config.target_expected_columns,
+            target_schema_ci,
+            "target",
+            "target_expected_columns",
+        )
+    else:
+        _columns_exist(
+            ctx.dataset.compare_columns, source_schema_ci, "source", "compare_columns_in_source"
+        )
+        _columns_exist(
+            ctx.dataset.compare_columns, target_schema_ci, "target", "compare_columns_in_target"
+        )
 
     # Data type compatibility (warn on cross-family mismatch only)
     mismatches = []
