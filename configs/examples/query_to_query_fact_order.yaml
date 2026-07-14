@@ -1,0 +1,92 @@
+# Query-to-query example: AdventureWorks OLTP order/customer/person join
+# chain (Postgres) vs. AdventureWorks DWH FACT_ORDER (Snowflake).
+#
+# See postgres_to_snowflake_table.yaml for notes on the local DuckDB
+# stand-in connections used here in place of live Postgres/Snowflake.
+
+project:
+  name: fact_order_migration
+  environment: dev
+  output_path: ./validation_runs
+
+execution:
+  mode: local
+  max_parallel_datasets: 1
+  fail_fast: false
+  write_generated_sql: true
+
+connections:
+  source_postgres:
+    type: duckdb
+    path: ./sample_data/source_oltp.duckdb
+
+  target_snowflake:
+    type: duckdb
+    path: ./sample_data/target_dwh.duckdb
+
+defaults:
+  hash:
+    algorithm: sha256
+    null_token: "<NULL>"
+    delimiter: "|"
+    trim_strings: true
+    case_sensitive: false
+
+datasets:
+  - name: fact_order_person_key_validation
+    mapping_mode: query_to_query
+
+    source:
+      connection: source_postgres
+      sql: |
+        SELECT
+            o.order_id AS order_id,
+            p.person_key AS person_key,
+            o.order_amount AS order_amount,
+            o.order_date AS order_date
+        FROM public.src_order o
+        JOIN public.order_customer oc
+            ON o.customer_id = oc.customer_id
+        JOIN public.person p
+            ON oc.person_id = p.person_id
+
+    target:
+      connection: target_snowflake
+      sql: |
+        SELECT
+            order_id AS order_id,
+            person_key AS person_key,
+            order_amount AS order_amount,
+            order_date AS order_date
+        FROM curated.fact_order
+
+    primary_key:
+      - order_id
+
+    compare_columns:
+      - person_key
+      - order_amount
+      - order_date
+
+    validations:
+      schema_contract:
+        enabled: true
+
+      count:
+        enabled: true
+
+      duplicate_keys:
+        enabled: true
+
+      row_hash:
+        enabled: true
+
+      aggregate:
+        enabled: true
+        metrics:
+          - column: order_amount
+            checks:
+              - sum
+              - avg
+              - min
+              - max

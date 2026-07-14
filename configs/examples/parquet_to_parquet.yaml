@@ -1,0 +1,58 @@
+# Parquet-to-parquet example: compares two local Parquet files directly
+# through the DuckDB-backed parquet connector. Useful for validating
+# extract files (e.g. staged exports) without any live database.
+
+project:
+  name: person_extract_validation
+  environment: dev
+  output_path: ./validation_runs
+
+execution:
+  mode: local
+  write_generated_sql: true
+
+connections:
+  source_files:
+    type: parquet
+    base_path: ./sample_data/parquet
+
+  target_files:
+    type: parquet
+    base_path: ./sample_data/parquet
+
+defaults:
+  hash:
+    algorithm: sha256
+
+datasets:
+  - name: person_extract_validation
+    mapping_mode: table_to_table
+
+    source:
+      connection: source_files
+      object: "read_parquet('./sample_data/parquet/person_source.parquet')"
+
+    target:
+      connection: target_files
+      object: "read_parquet('./sample_data/parquet/person_target.parquet')"
+
+    primary_key:
+      - person_id
+
+    compare_columns:
+      - person_key
+      - first_name
+      - last_name
+
+    validations:
+      schema_contract:
+        enabled: true
+
+      count:
+        enabled: true
+
+      duplicate_keys:
+        enabled: true
+
+      row_hash:
+        enabled: true

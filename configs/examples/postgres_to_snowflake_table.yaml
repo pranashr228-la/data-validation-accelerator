@@ -1,0 +1,148 @@
+# Table-to-table example: AdventureWorks OLTP (Postgres) customer table vs.
+# AdventureWorks DWH (Snowflake) DIM_CUSTOMER.
+#
+# No live Postgres/Snowflake instances were available for this MVP demo, so
+# the connections below point at local DuckDB files that were seeded from
+# sample_data/build_sample_data.py. To run this against real systems, change
+# `type: duckdb` / `path: ...` to `type: postgres` / `type: snowflake` with
+# the connection fields shown commented out below.
+
+project:
+  name: customer_migration
+  environment: dev
+  output_path: ./validation_runs
+
+execution:
+  mode: local
+  max_parallel_datasets: 1
+  max_parallel_partitions: 1
+  fail_fast: false
+  write_generated_sql: true
+
+connections:
+  source_postgres:
+    type: duckdb
+    path: ./sample_data/source_oltp.duckdb
+    # Real Postgres source (uncomment and remove the duckdb block above):
+    # type: postgres
+    # host: ${SRC_PG_HOST}
+    # port: 5432
+    # database: ${SRC_PG_DATABASE}
+    # schema: public
+    # username: ${SRC_PG_USER}
+    # password: ${SRC_PG_PASSWORD}
+
+  target_snowflake:
+    type: duckdb
+    path: ./sample_data/target_dwh.duckdb
+    # Real Snowflake target (uncomment and remove the duckdb block above):
+    # type: snowflake
+    # account: ${SNOWFLAKE_ACCOUNT}
+    # warehouse: ${SNOWFLAKE_WAREHOUSE}
+    # database: ${SNOWFLAKE_DATABASE}
+    # schema: CURATED
+    # username: ${SNOWFLAKE_USER}
+    # password: ${SNOWFLAKE_PASSWORD}
+
+defaults:
+  hash:
+    algorithm: sha256
+    null_token: "<NULL>"
+    delimiter: "|"
+    trim_strings: true
+    case_sensitive: false
+    empty_string_as_null: false
+    decimal_scale: 2
+    timestamp_timezone: UTC
+
+datasets:
+  - name: customer_table_validation
+    mapping_mode: table_to_table
+
+    source:
+      connection: source_postgres
+      object: public.customer
+
+    target:
+      connection: target_snowflake
+      object: curated.dim_customer
+
+    primary_key:
+      - customer_id
+
+    compare_columns:
+      - email
+      - status
+      - balance
+
+    validations:
+      schema_contract:
+        enabled: true
+
+      count:
+        enabled: true
+        tolerance:
+          type: percentage
+          warning: 0.0
+          failure: 0.0
+
+      duplicate_keys:
+        enabled: true
+
+      row_hash:
+        enabled: true
+        max_mismatch_samples: 10000
+        write_full_mismatches: true
+
+      aggregate:
+        enabled: true
+        group_by:
+          - status
+        metrics:
+          - column: customer_id
+            checks:
+              - count
+              - count_distinct
+          - column: balance
+            checks:
+              - sum
+              - avg
+              - min
+              - max
+              - null_count
+            tolerance:
+              type: percentage
+              warning: 0.1
+              failure: 1.0
+
+      statistical:
+        enabled: true
+        metrics:
+          - column: balance
+            checks:
+              - mean
+              - stddev
+              - p50
+              - p95
+              - p99
+            tolerance:
+              type: percentage
+              warning: 0.5
+              failure: 2.0
+
+      data_quality:
+        enabled: true
+        rules:
+          - name: email_not_null
+            type: not_null
+            column: email
+            severity: HIGH
+
+          - name: status_allowed_values
+            type: allowed_values
+            column: status
+            values:
+              - Active
+              - Inactive
+              - Suspended
+            severity: MEDIUM

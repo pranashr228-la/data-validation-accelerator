@@ -1,0 +1,73 @@
+# Schema-contract-only example: demonstrates mapping_based schema contract
+# checks (required/expected columns, unmapped target columns) without
+# running the heavier row-level validations.
+
+project:
+  name: customer_schema_contract
+  environment: dev
+  output_path: ./validation_runs
+
+execution:
+  mode: local
+  write_generated_sql: true
+
+connections:
+  source_postgres:
+    type: duckdb
+    path: ./sample_data/source_oltp.duckdb
+
+  target_snowflake:
+    type: duckdb
+    path: ./sample_data/target_dwh.duckdb
+
+defaults:
+  hash:
+    algorithm: sha256
+
+datasets:
+  - name: customer_schema_contract_validation
+    mapping_mode: table_to_table
+
+    source:
+      connection: source_postgres
+      object: public.customer
+
+    target:
+      connection: target_snowflake
+      object: curated.dim_customer
+
+    primary_key:
+      - customer_id
+
+    compare_columns:
+      - email
+      - status
+      - balance
+
+    validations:
+      schema_contract:
+        enabled: true
+        mode: mapping_based
+
+        source_required_columns:
+          - customer_id
+          - first_name
+          - last_name
+          - email
+          - status
+
+        target_expected_columns:
+          - customer_id
+          - customer_name
+          - email
+          - status
+          - balance
+          - load_batch_id
+
+        target_unmapped_columns:
+          - column: LOAD_BATCH_ID
+            handling: system_generated
+          - column: UPDATED_DATE
+            handling: system_generated
+          - column: CUSTOMER_NAME
+            handling: derived

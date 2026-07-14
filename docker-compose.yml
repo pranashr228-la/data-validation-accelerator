@@ -1,0 +1,7 @@
+services:
+  dva:
+    build: .
+    image: data-validation-accelerator:latest
+    volumes:
+      - ./validation_runs:/app/validation_runs
+    command: ["run", "--config", "configs/examples/postgres_to_snowflake_table.yaml"]

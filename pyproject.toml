@@ -1,0 +1,47 @@
+[project]
+name = "data-validation-accelerator"
+version = "0.1.0"
+description = "Config-driven data validation accelerator for migration and ETL testing"
+requires-python = ">=3.14"
+dependencies = [
+    "typer>=0.26.8",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.3",
+    "duckdb>=1.5.4",
+    "pyarrow>=25.0.0",
+    "python-dotenv>=1.2.2",
+    "psycopg[binary]>=3.3.4",
+    "snowflake-connector-python>=4.6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.21",
+    "mypy>=2.2.0",
+    "types-pyyaml>=6.0.12.20260518",
+]
+
+[project.scripts]
+dva = "dva.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dva"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/dva"]

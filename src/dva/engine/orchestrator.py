@@ -1,0 +1,116 @@
+"""Top-level orchestrator: opens connections, runs each dataset, writes reports."""
+
+from __future__ import annotations
+
+from dva.config.models import RootConfig
+from dva.connectors.base import Connector
+from dva.connectors.registry import create_connector
+from dva.engine.context import RunContext
+from dva.engine.dataset_runner import run_dataset
+from dva.reporting.jsonl_logger import JsonlLogger
+from dva.reporting.manifest import write_manifest
+from dva.reporting.models import ExecutionLog, RunSummary
+from dva.utils.ids import generate_run_id
+from dva.utils.paths import ensure_dir
+from dva.utils.paths import run_dir as build_run_dir
+from dva.utils.time import to_iso, utcnow
+
+
+class Orchestrator:
+    def __init__(self, config: RootConfig, output_path: str | None = None) -> None:
+        self.config = config
+        self.output_path = output_path or config.project.output_path
+
+    def run_validation(self) -> RunSummary:
+        run_id = generate_run_id(utcnow())
+        run_directory = ensure_dir(
+            build_run_dir(self.output_path, self.config.project.name, run_id)
+        )
+        run = RunContext(run_id=run_id, config=self.config, run_dir=run_directory)
+        run.logger = JsonlLogger(run_directory)
+        start = to_iso(utcnow())
+
+        connectors: dict[str, Connector] = {
+            name: create_connector(conn_cfg) for name, conn_cfg in self.config.connections.items()
+        }
+        for connector in connectors.values():
+            connector.connect()
+
+        try:
+            for dataset in self.config.datasets:
+                run.logger.log(
+                    ExecutionLog(
+                        run_id=run_id, timestamp=to_iso(utcnow()), level="INFO",
+                        dataset_name=dataset.name, message=f"Starting dataset '{dataset.name}'",
+                    )
+                )
+                summary = run_dataset(run, dataset, connectors)
+                run.logger.log(
+                    ExecutionLog(
+                        run_id=run_id, timestamp=to_iso(utcnow()), level="INFO",
+                        dataset_name=dataset.name,
+                        message=f"Finished dataset '{dataset.name}' with status {summary.status}",
+                    )
+                )
+                if self.config.execution.fail_fast and summary.status in ("FAIL", "ERROR"):
+                    break
+        finally:
+            for connector in connectors.values():
+                connector.close()
+            run.scratch_duckdb.close()
+
+        statuses = {d.status for d in run.report.dataset_summaries}
+        if "ERROR" in statuses:
+            overall_status = "ERROR"
+        elif "FAIL" in statuses:
+            overall_status = "FAIL"
+        elif "WARN" in statuses:
+            overall_status = "WARN"
+        else:
+            overall_status = "PASS"
+
+        run_summary = RunSummary(
+            run_id=run_id,
+            project_name=self.config.project.name,
+            environment=self.config.project.environment,
+            start_time=start,
+            end_time=to_iso(utcnow()),
+            status=overall_status,
+            dataset_count=len(run.report.dataset_summaries),
+            passed_count=sum(1 for d in run.report.dataset_summaries if d.status == "PASS"),
+            failed_count=sum(1 for d in run.report.dataset_summaries if d.status == "FAIL"),
+            error_count=sum(1 for d in run.report.dataset_summaries if d.status == "ERROR"),
+        )
+        run.report.run_summaries.append(run_summary)
+        run.report.write_all(run_directory)
+        write_manifest(
+            run_directory,
+            {
+                "run_id": run_id,
+                "project_name": self.config.project.name,
+                "environment": self.config.project.environment,
+                "status": overall_status,
+                "start_time": start,
+                "end_time": run_summary.end_time,
+                "dataset_count": run_summary.dataset_count,
+                "datasets": [d.name for d in self.config.datasets],
+                "output_files": [
+                    "run_summary.parquet",
+                    "dataset_summary.parquet",
+                    "rule_results.parquet",
+                    "schema_results.parquet",
+                    "count_results.parquet",
+                    "aggregate_results.parquet",
+                    "statistical_results.parquet",
+                    "hash_summary.parquet",
+                    "hash_mismatches.parquet",
+                    "missing_records.parquet",
+                    "extra_records.parquet",
+                    "duplicate_keys.parquet",
+                    "dq_results.parquet",
+                    "validation_issues.parquet",
+                    "execution_logs.jsonl",
+                ],
+            },
+        )
+        return run_summary
