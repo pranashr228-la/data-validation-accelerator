@@ -38,11 +38,9 @@ def validate_config(config: RootConfig) -> None:
                 )
             if dataset.mapping_mode == "query_to_query" and side.sql is None:
                 errors.append(
-                    f"{prefix}: mapping_mode 'query_to_query' requires {side_name}.sql"
+                    f"{prefix}: mapping_mode 'query_to_query' requires {side_name}.sql "
+                    f"(or {side_name}.query)"
                 )
-
-        if dataset.validations.row_hash.enabled and not dataset.compare_columns:
-            errors.append(f"{prefix}: row_hash validation requires 'compare_columns'")
 
         if dataset.validations.aggregate.enabled and not dataset.validations.aggregate.metrics:
             errors.append(f"{prefix}: aggregate validation enabled but no 'metrics' configured")

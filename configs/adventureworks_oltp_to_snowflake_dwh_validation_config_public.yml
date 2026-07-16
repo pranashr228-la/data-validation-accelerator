@@ -1,0 +1,740 @@
+project:
+  name: adventureworks_internet_sales_validation
+  output_path: ./validation_runs/adventureworks_internet_sales
+
+connections:
+  source_postgres:
+    type: postgres
+    host: ${SRC_PG_HOST}
+    port: ${SRC_PG_PORT:-5432}
+    database: ${SRC_PG_DATABASE}
+    schema: public
+    user: ${SRC_PG_USER}
+    password: ${SRC_PG_PASSWORD}
+  target_snowflake:
+    type: snowflake
+    account: ${SNOWFLAKE_ACCOUNT}
+    user: ${SNOWFLAKE_USER}
+    password: ${SNOWFLAKE_PASSWORD}
+    role: ${SNOWFLAKE_ROLE}
+    warehouse: ${SNOWFLAKE_WAREHOUSE}
+    database: ${SNOWFLAKE_DATABASE}
+    schema: PUBLIC
+
+settings:
+  identifier_case: case_insensitive
+  trim_strings: true
+  null_equals_empty_string: false
+  numeric_tolerance: 0.0001
+  timestamp_tolerance_seconds: 1
+
+defaults:
+  validations:
+    row_hash:
+      max_mismatch_samples: 100
+      write_full_mismatches: false
+
+datasets:
+  - name: dim_date_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH bounds AS (
+          SELECT
+            MIN(LEAST(orderdate::date, duedate::date, COALESCE(shipdate::date, duedate::date))) AS min_date,
+            MAX(GREATEST(orderdate::date, duedate::date, COALESCE(shipdate::date, duedate::date))) AS max_date
+          FROM sales.salesorderheader
+          WHERE onlineorderflag = TRUE
+        ), cal AS (
+          SELECT generate_series(min_date, max_date, interval '1 day')::date AS date_value
+          FROM bounds
+        )
+        SELECT
+          TO_CHAR(date_value, 'YYYYMMDD')::integer AS "DateKey",
+          date_value AS "FullDateAlternateKey",
+          EXTRACT(DOW FROM date_value)::integer + 1 AS "DayNumberOfWeek",
+          TRIM(TO_CHAR(date_value, 'Day')) AS "EnglishDayNameOfWeek",
+          TRIM(TO_CHAR(date_value, 'Day')) AS "SpanishDayNameOfWeek",
+          TRIM(TO_CHAR(date_value, 'Day')) AS "FrenchDayNameOfWeek",
+          EXTRACT(DAY FROM date_value)::integer AS "DayNumberOfMonth",
+          EXTRACT(DOY FROM date_value)::integer AS "DayNumberOfYear",
+          EXTRACT(WEEK FROM date_value)::integer AS "WeekNumberOfYear",
+          TRIM(TO_CHAR(date_value, 'Month')) AS "EnglishMonthName",
+          TRIM(TO_CHAR(date_value, 'Month')) AS "SpanishMonthName",
+          TRIM(TO_CHAR(date_value, 'Month')) AS "FrenchMonthName",
+          EXTRACT(MONTH FROM date_value)::integer AS "MonthNumberOfYear",
+          EXTRACT(QUARTER FROM date_value)::integer AS "CalendarQuarter",
+          EXTRACT(YEAR FROM date_value)::integer AS "CalendarYear",
+          CASE WHEN EXTRACT(MONTH FROM date_value) <= 6 THEN 1 ELSE 2 END AS "CalendarSemester",
+          EXTRACT(QUARTER FROM date_value)::integer AS "FiscalQuarter",
+          EXTRACT(YEAR FROM date_value)::integer AS "FiscalYear",
+          CASE WHEN EXTRACT(MONTH FROM date_value) <= 6 THEN 1 ELSE 2 END AS "FiscalSemester"
+        FROM cal
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          DateKey AS "DateKey",
+          FullDateAlternateKey AS "FullDateAlternateKey",
+          DayNumberOfWeek AS "DayNumberOfWeek",
+          EnglishDayNameOfWeek AS "EnglishDayNameOfWeek",
+          SpanishDayNameOfWeek AS "SpanishDayNameOfWeek",
+          FrenchDayNameOfWeek AS "FrenchDayNameOfWeek",
+          DayNumberOfMonth AS "DayNumberOfMonth",
+          DayNumberOfYear AS "DayNumberOfYear",
+          WeekNumberOfYear AS "WeekNumberOfYear",
+          EnglishMonthName AS "EnglishMonthName",
+          SpanishMonthName AS "SpanishMonthName",
+          FrenchMonthName AS "FrenchMonthName",
+          MonthNumberOfYear AS "MonthNumberOfYear",
+          CalendarQuarter AS "CalendarQuarter",
+          CalendarYear AS "CalendarYear",
+          CalendarSemester AS "CalendarSemester",
+          FiscalQuarter AS "FiscalQuarter",
+          FiscalYear AS "FiscalYear",
+          FiscalSemester AS "FiscalSemester"
+        FROM public.dimdate
+    primary_key: [DateKey]
+    compare_columns: [FullDateAlternateKey, DayNumberOfWeek, EnglishDayNameOfWeek, SpanishDayNameOfWeek, FrenchDayNameOfWeek, DayNumberOfMonth, DayNumberOfYear, WeekNumberOfYear, EnglishMonthName, SpanishMonthName, FrenchMonthName, MonthNumberOfYear, CalendarQuarter, CalendarYear, CalendarSemester, FiscalQuarter, FiscalYear, FiscalSemester]
+  - name: dim_product_category_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          pc.productcategoryid AS "ProductCategoryAlternateKey",
+          TRIM(pc.name) AS "EnglishProductCategoryName",
+          TRIM(pc.name) AS "SpanishProductCategoryName",
+          TRIM(pc.name) AS "FrenchProductCategoryName"
+        FROM production.productcategory pc
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
+          EnglishProductCategoryName AS "EnglishProductCategoryName",
+          EnglishProductCategoryName AS "SpanishProductCategoryName",
+          EnglishProductCategoryName AS "FrenchProductCategoryName"
+        FROM public.dimproductcategory
+    primary_key: [ProductCategoryAlternateKey]
+    compare_columns: [EnglishProductCategoryName, SpanishProductCategoryName, FrenchProductCategoryName]
+  - name: dim_product_subcategory_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          ps.productsubcategoryid AS "ProductSubcategoryAlternateKey",
+          ps.productcategoryid AS "ProductCategoryAlternateKey",
+          TRIM(ps.name) AS "EnglishProductSubcategoryName",
+          TRIM(ps.name) AS "SpanishProductSubcategoryName",
+          TRIM(ps.name) AS "FrenchProductSubcategoryName"
+        FROM production.productsubcategory ps
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          dps.ProductSubcategoryAlternateKey AS "ProductSubcategoryAlternateKey",
+          dpc.ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
+          dps.EnglishProductSubcategoryName AS "EnglishProductSubcategoryName",
+          dps.SpanishProductSubcategoryName AS "SpanishProductSubcategoryName",
+          dps.FrenchProductSubcategoryName AS "FrenchProductSubcategoryName"
+        FROM public.dimproductsubcategory dps
+        LEFT JOIN public.dimproductcategory dpc
+          ON dps.ProductCategoryKey = dpc.ProductCategoryKey
+    primary_key: [ProductSubcategoryAlternateKey]
+    compare_columns: [ProductCategoryAlternateKey, EnglishProductSubcategoryName, SpanishProductSubcategoryName, FrenchProductSubcategoryName]
+  - name: dim_product_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH product_descriptions AS (
+          SELECT
+            pmpdc.productmodelid,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('en', 'en-us') THEN pd.description END) AS english_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('fr', 'fr-fr') THEN pd.description END) AS french_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('zh-cht', 'zh-cn', 'zh') THEN pd.description END) AS chinese_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('ar') THEN pd.description END) AS arabic_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('he') THEN pd.description END) AS hebrew_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('th') THEN pd.description END) AS thai_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('de', 'de-de') THEN pd.description END) AS german_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('ja', 'ja-jp') THEN pd.description END) AS japanese_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('tr', 'tr-tr') THEN pd.description END) AS turkish_description
+          FROM production.productmodelproductdescriptionculture pmpdc
+          JOIN production.productdescription pd
+            ON pmpdc.productdescriptionid = pd.productdescriptionid
+          GROUP BY pmpdc.productmodelid
+        ), product_photo AS (
+          SELECT DISTINCT ON (ppp.productid)
+            ppp.productid,
+            pp.largephoto
+          FROM production.productproductphoto ppp
+          JOIN production.productphoto pp
+            ON ppp.productphotoid = pp.productphotoid
+          ORDER BY ppp.productid, ppp.primary DESC, ppp.productphotoid
+        )
+        SELECT
+          p.productnumber AS "ProductAlternateKey",
+          ps.productsubcategoryid AS "ProductSubcategoryAlternateKey",
+          ps.productcategoryid AS "ProductCategoryAlternateKey",
+          p.weightunitmeasurecode AS "WeightUnitMeasureCode",
+          p.sizeunitmeasurecode AS "SizeUnitMeasureCode",
+          TRIM(p.name) AS "EnglishProductName",
+          TRIM(p.name) AS "SpanishProductName",
+          TRIM(p.name) AS "FrenchProductName",
+          p.standardcost AS "StandardCost",
+          p.finishedgoodsflag AS "FinishedGoodsFlag",
+          COALESCE(p.color, 'NA') AS "Color",
+          p.safetystocklevel AS "SafetyStockLevel",
+          p.reorderpoint AS "ReorderPoint",
+          p.listprice AS "ListPrice",
+          COALESCE(p.size, 'NA') AS "Size",
+          CASE
+            WHEN p.size IS NULL THEN 'NA'
+            WHEN UPPER(TRIM(p.size)) IN ('XS','S','M','L','XL','XXL') THEN UPPER(TRIM(p.size))
+            WHEN p.size ~ '^[0-9]+(\\.[0-9]+)?$' AND p.size::numeric BETWEEN 38 AND 42 THEN '38-42'
+            WHEN p.size ~ '^[0-9]+(\\.[0-9]+)?$' AND p.size::numeric BETWEEN 44 AND 48 THEN '44-48'
+            WHEN p.size ~ '^[0-9]+(\\.[0-9]+)?$' AND p.size::numeric BETWEEN 50 AND 62 THEN '50-62'
+            ELSE 'Other'
+          END AS "SizeRange",
+          p.weight AS "Weight",
+          p.daystomanufacture AS "DaysToManufacture",
+          COALESCE(p.productline, 'NA') AS "ProductLine",
+          CAST(p.listprice * 0.60 AS numeric(19,4)) AS "DealerPrice",
+          COALESCE(p.class, 'NA') AS "Class",
+          COALESCE(p.style, 'NA') AS "Style",
+          pm.name AS "ModelName",
+          product_photo.largephoto AS "LargePhoto",
+          product_descriptions.english_description AS "EnglishDescription",
+          product_descriptions.french_description AS "FrenchDescription",
+          product_descriptions.chinese_description AS "ChineseDescription",
+          product_descriptions.arabic_description AS "ArabicDescription",
+          product_descriptions.hebrew_description AS "HebrewDescription",
+          product_descriptions.thai_description AS "ThaiDescription",
+          product_descriptions.german_description AS "GermanDescription",
+          product_descriptions.japanese_description AS "JapaneseDescription",
+          product_descriptions.turkish_description AS "TurkishDescription"
+        FROM production.product p
+        LEFT JOIN production.productsubcategory ps
+          ON p.productsubcategoryid = ps.productsubcategoryid
+        LEFT JOIN production.productmodel pm
+          ON p.productmodelid = pm.productmodelid
+        LEFT JOIN product_descriptions
+          ON p.productmodelid = product_descriptions.productmodelid
+        LEFT JOIN product_photo
+          ON p.productid = product_photo.productid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          dp.ProductAlternateKey AS "ProductAlternateKey",
+          dps.ProductSubcategoryAlternateKey AS "ProductSubcategoryAlternateKey",
+          dpc.ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
+          dp.WeightUnitMeasureCode AS "WeightUnitMeasureCode",
+          dp.SizeUnitMeasureCode AS "SizeUnitMeasureCode",
+          dp.EnglishProductName AS "EnglishProductName",
+          dp.SpanishProductName AS "SpanishProductName",
+          dp.FrenchProductName AS "FrenchProductName",
+          dp.StandardCost AS "StandardCost",
+          dp.FinishedGoodsFlag AS "FinishedGoodsFlag",
+          dp.Color AS "Color",
+          dp.SafetyStockLevel AS "SafetyStockLevel",
+          dp.ReorderPoint AS "ReorderPoint",
+          dp.ListPrice AS "ListPrice",
+          dp.Size AS "Size",
+          dp.SizeRange AS "SizeRange",
+          dp.Weight AS "Weight",
+          dp.DaysToManufacture AS "DaysToManufacture",
+          dp.ProductLine AS "ProductLine",
+          dp.DealerPrice AS "DealerPrice",
+          dp.Class AS "Class",
+          dp.Style AS "Style",
+          dp.ModelName AS "ModelName",
+          dp.LargePhoto AS "LargePhoto",
+          dp.EnglishDescription AS "EnglishDescription",
+          dp.FrenchDescription AS "FrenchDescription",
+          dp.ChineseDescription AS "ChineseDescription",
+          dp.ArabicDescription AS "ArabicDescription",
+          dp.HebrewDescription AS "HebrewDescription",
+          dp.ThaiDescription AS "ThaiDescription",
+          dp.GermanDescription AS "GermanDescription",
+          dp.JapaneseDescription AS "JapaneseDescription",
+          dp.TurkishDescription AS "TurkishDescription"
+        FROM public.dimproduct dp
+        LEFT JOIN public.dimproductsubcategory dps
+          ON dp.ProductSubcategoryKey = dps.ProductSubcategoryKey
+        LEFT JOIN public.dimproductcategory dpc
+          ON dps.ProductCategoryKey = dpc.ProductCategoryKey
+        WHERE COALESCE(dp.Status, 'Current') = 'Current'
+    primary_key: [ProductAlternateKey]
+    compare_columns: [ProductSubcategoryAlternateKey, ProductCategoryAlternateKey, WeightUnitMeasureCode, SizeUnitMeasureCode, EnglishProductName, SpanishProductName, FrenchProductName, StandardCost, FinishedGoodsFlag, Color, SafetyStockLevel, ReorderPoint, ListPrice, Size, SizeRange, Weight, DaysToManufacture, ProductLine, DealerPrice, Class, Style, ModelName, LargePhoto, EnglishDescription, FrenchDescription, ChineseDescription, ArabicDescription, HebrewDescription, ThaiDescription, GermanDescription, JapaneseDescription, TurkishDescription]
+    validations:
+      aggregate:
+        group_by: [ProductLine]
+        metrics:
+          - column: ListPrice
+            checks: [sum, avg, count]
+          - column: StandardCost
+            checks: [sum, avg]
+      statistical:
+        metrics:
+          - column: ListPrice
+            checks: [mean, stddev, p50]
+          - column: StandardCost
+            checks: [mean, stddev]
+  - name: dim_sales_reason_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          sr.salesreasonid AS "SalesReasonAlternateKey",
+          TRIM(sr.name) AS "SalesReasonName",
+          TRIM(sr.reasontype) AS "SalesReasonReasonType"
+        FROM sales.salesreason sr
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          SalesReasonAlternateKey AS "SalesReasonAlternateKey",
+          SalesReasonName AS "SalesReasonName",
+          SalesReasonReasonType AS "SalesReasonReasonType"
+        FROM public.dimsalesreason
+    primary_key: [SalesReasonAlternateKey]
+    compare_columns: [SalesReasonName, SalesReasonReasonType]
+  - name: dim_currency_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          TRIM(currencycode) AS "CurrencyAlternateKey",
+          TRIM(name) AS "CurrencyName"
+        FROM sales.currency
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          CurrencyAlternateKey AS "CurrencyAlternateKey",
+          CurrencyName AS "CurrencyName"
+        FROM public.dimcurrency
+    primary_key: [CurrencyAlternateKey]
+    compare_columns: [CurrencyName]
+  - name: dim_promotion_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          specialofferid AS "PromotionAlternateKey",
+          TRIM(description) AS "EnglishPromotionName",
+          TRIM(description) AS "SpanishPromotionName",
+          TRIM(description) AS "FrenchPromotionName",
+          discountpct AS "DiscountPct",
+          TRIM(type) AS "EnglishPromotionType",
+          TRIM(type) AS "SpanishPromotionType",
+          TRIM(type) AS "FrenchPromotionType",
+          TRIM(category) AS "EnglishPromotionCategory",
+          TRIM(category) AS "SpanishPromotionCategory",
+          TRIM(category) AS "FrenchPromotionCategory",
+          startdate AS "StartDate",
+          enddate AS "EndDate",
+          minqty AS "MinQty",
+          maxqty AS "MaxQty"
+        FROM sales.specialoffer
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          PromotionAlternateKey AS "PromotionAlternateKey",
+          EnglishPromotionName AS "EnglishPromotionName",
+          SpanishPromotionName AS "SpanishPromotionName",
+          FrenchPromotionName AS "FrenchPromotionName",
+          DiscountPct AS "DiscountPct",
+          EnglishPromotionType AS "EnglishPromotionType",
+          SpanishPromotionType AS "SpanishPromotionType",
+          FrenchPromotionType AS "FrenchPromotionType",
+          EnglishPromotionCategory AS "EnglishPromotionCategory",
+          SpanishPromotionCategory AS "SpanishPromotionCategory",
+          FrenchPromotionCategory AS "FrenchPromotionCategory",
+          StartDate AS "StartDate",
+          EndDate AS "EndDate",
+          MinQty AS "MinQty",
+          MaxQty AS "MaxQty"
+        FROM public.dimpromotion
+    primary_key: [PromotionAlternateKey]
+    compare_columns: [EnglishPromotionName, SpanishPromotionName, FrenchPromotionName, DiscountPct, EnglishPromotionType, SpanishPromotionType, FrenchPromotionType, EnglishPromotionCategory, SpanishPromotionCategory, FrenchPromotionCategory, StartDate, EndDate, MinQty, MaxQty]
+    validations:
+      aggregate:
+        group_by: [EnglishPromotionType]
+        metrics:
+          - column: DiscountPct
+            checks: [sum, avg, min, max]
+  - name: dim_sales_territory_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          st.territoryid AS "SalesTerritoryAlternateKey",
+          TRIM(st.name) AS "SalesTerritoryRegion",
+          TRIM(cr.name) AS "SalesTerritoryCountry",
+          TRIM(st."group") AS "SalesTerritoryGroup"
+        FROM sales.salesterritory st
+        LEFT JOIN person.countryregion cr
+          ON st.countryregioncode = cr.countryregioncode
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey",
+          SalesTerritoryRegion AS "SalesTerritoryRegion",
+          SalesTerritoryCountry AS "SalesTerritoryCountry",
+          SalesTerritoryGroup AS "SalesTerritoryGroup"
+        FROM public.dimsalesterritory
+    primary_key: [SalesTerritoryAlternateKey]
+    compare_columns: [SalesTerritoryRegion, SalesTerritoryCountry, SalesTerritoryGroup]
+  - name: dim_geography_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT DISTINCT
+          CONCAT_WS('|', COALESCE(TRIM(a.city), ''), COALESCE(TRIM(sp.stateprovincecode), ''), COALESCE(TRIM(a.postalcode), ''), COALESCE(TRIM(sp.countryregioncode), '')) AS "GeographyNaturalKey",
+          TRIM(a.city) AS "City",
+          TRIM(sp.stateprovincecode) AS "StateProvinceCode",
+          TRIM(sp.name) AS "StateProvinceName",
+          TRIM(sp.countryregioncode) AS "CountryRegionCode",
+          TRIM(cr.name) AS "EnglishCountryRegionName",
+          TRIM(cr.name) AS "SpanishCountryRegionName",
+          TRIM(cr.name) AS "FrenchCountryRegionName",
+          TRIM(a.postalcode) AS "PostalCode",
+          sp.territoryid AS "SalesTerritoryAlternateKey"
+        FROM person.address a
+        JOIN person.stateprovince sp
+          ON a.stateprovinceid = sp.stateprovinceid
+        JOIN person.countryregion cr
+          ON sp.countryregioncode = cr.countryregioncode
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          CONCAT_WS('|', COALESCE(TRIM(dg.City), ''), COALESCE(TRIM(dg.StateProvinceCode), ''), COALESCE(TRIM(dg.PostalCode), ''), COALESCE(TRIM(dg.CountryRegionCode), '')) AS "GeographyNaturalKey",
+          dg.City AS "City",
+          dg.StateProvinceCode AS "StateProvinceCode",
+          dg.StateProvinceName AS "StateProvinceName",
+          dg.CountryRegionCode AS "CountryRegionCode",
+          dg.EnglishCountryRegionName AS "EnglishCountryRegionName",
+          dg.SpanishCountryRegionName AS "SpanishCountryRegionName",
+          dg.FrenchCountryRegionName AS "FrenchCountryRegionName",
+          dg.PostalCode AS "PostalCode",
+          dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey"
+        FROM public.dimgeography dg
+        LEFT JOIN public.dimsalesterritory dst
+          ON dg.SalesTerritoryKey = dst.SalesTerritoryKey
+    primary_key: [GeographyNaturalKey]
+    compare_columns: [City, StateProvinceCode, StateProvinceName, CountryRegionCode, EnglishCountryRegionName, SpanishCountryRegionName, FrenchCountryRegionName, PostalCode, SalesTerritoryAlternateKey]
+  - name: dim_customer_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH primary_address AS (
+          SELECT
+            bea.businessentityid,
+            a.addressline1,
+            a.addressline2,
+            a.city,
+            a.postalcode,
+            sp.stateprovincecode,
+            sp.countryregioncode,
+            ROW_NUMBER() OVER (PARTITION BY bea.businessentityid ORDER BY at.name, bea.addressid) AS rn
+          FROM person.businessentityaddress bea
+          JOIN person.addresstype at
+            ON bea.addresstypeid = at.addresstypeid
+          JOIN person.address a
+            ON bea.addressid = a.addressid
+          JOIN person.stateprovince sp
+            ON a.stateprovinceid = sp.stateprovinceid
+        ), first_purchase AS (
+          SELECT customerid, MIN(orderdate)::date AS date_first_purchase
+          FROM sales.salesorderheader
+          WHERE onlineorderflag = TRUE
+          GROUP BY customerid
+        ), demographics AS (
+          SELECT
+            p.businessentityid,
+            NULLIF((xpath('string(//*[local-name()="BirthDate"])', p.demographics::xml))[1]::text, '')::date AS birth_date,
+            NULLIF((xpath('string(//*[local-name()="MaritalStatus"])', p.demographics::xml))[1]::text, '') AS marital_status,
+            NULLIF((xpath('string(//*[local-name()="Gender"])', p.demographics::xml))[1]::text, '') AS gender,
+            NULLIF((xpath('string(//*[local-name()="YearlyIncome"])', p.demographics::xml))[1]::text, '')::text AS yearly_income,
+            NULLIF((xpath('string(//*[local-name()="TotalChildren"])', p.demographics::xml))[1]::text, '')::integer AS total_children,
+            NULLIF((xpath('string(//*[local-name()="NumberChildrenAtHome"])', p.demographics::xml))[1]::text, '')::integer AS number_children_at_home,
+            NULLIF((xpath('string(//*[local-name()="Education"])', p.demographics::xml))[1]::text, '') AS education,
+            NULLIF((xpath('string(//*[local-name()="Occupation"])', p.demographics::xml))[1]::text, '') AS occupation,
+            NULLIF((xpath('string(//*[local-name()="HomeOwnerFlag"])', p.demographics::xml))[1]::text, '') AS home_owner_flag,
+            NULLIF((xpath('string(//*[local-name()="NumberCarsOwned"])', p.demographics::xml))[1]::text, '')::integer AS number_cars_owned,
+            NULLIF((xpath('string(//*[local-name()="CommuteDistance"])', p.demographics::xml))[1]::text, '') AS commute_distance
+          FROM person.person p
+        )
+        SELECT
+          COALESCE(c.accountnumber, 'AW' || LPAD(c.customerid::text, 8, '0')) AS "CustomerAlternateKey",
+          CONCAT_WS('|', COALESCE(TRIM(pa.city), ''), COALESCE(TRIM(pa.stateprovincecode), ''), COALESCE(TRIM(pa.postalcode), ''), COALESCE(TRIM(pa.countryregioncode), '')) AS "GeographyNaturalKey",
+          p.title AS "Title",
+          p.firstname AS "FirstName",
+          p.middlename AS "MiddleName",
+          p.lastname AS "LastName",
+          p.namestyle AS "NameStyle",
+          demographics.birth_date AS "BirthDate",
+          demographics.marital_status AS "MaritalStatus",
+          p.suffix AS "Suffix",
+          demographics.gender AS "Gender",
+          ea.emailaddress AS "EmailAddress",
+          demographics.yearly_income AS "YearlyIncome",
+          demographics.total_children AS "TotalChildren",
+          demographics.number_children_at_home AS "NumberChildrenAtHome",
+          demographics.education AS "EnglishEducation",
+          demographics.education AS "SpanishEducation",
+          demographics.education AS "FrenchEducation",
+          demographics.occupation AS "EnglishOccupation",
+          demographics.occupation AS "SpanishOccupation",
+          demographics.occupation AS "FrenchOccupation",
+          demographics.home_owner_flag AS "HouseOwnerFlag",
+          demographics.number_cars_owned AS "NumberCarsOwned",
+          pa.addressline1 AS "AddressLine1",
+          pa.addressline2 AS "AddressLine2",
+          pp.phonenumber AS "Phone",
+          first_purchase.date_first_purchase AS "DateFirstPurchase",
+          demographics.commute_distance AS "CommuteDistance"
+        FROM sales.customer c
+        JOIN person.person p
+          ON c.personid = p.businessentityid
+        LEFT JOIN demographics
+          ON p.businessentityid = demographics.businessentityid
+        LEFT JOIN person.emailaddress ea
+          ON p.businessentityid = ea.businessentityid
+         AND ea.emailaddressid = 1
+        LEFT JOIN person.personphone pp
+          ON p.businessentityid = pp.businessentityid
+        LEFT JOIN primary_address pa
+          ON p.businessentityid = pa.businessentityid
+         AND pa.rn = 1
+        LEFT JOIN first_purchase
+          ON c.customerid = first_purchase.customerid
+        WHERE c.personid IS NOT NULL
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          dc.CustomerAlternateKey AS "CustomerAlternateKey",
+          CONCAT_WS('|', COALESCE(TRIM(dg.City), ''), COALESCE(TRIM(dg.StateProvinceCode), ''), COALESCE(TRIM(dg.PostalCode), ''), COALESCE(TRIM(dg.CountryRegionCode), '')) AS "GeographyNaturalKey",
+          dc.Title AS "Title",
+          dc.FirstName AS "FirstName",
+          dc.MiddleName AS "MiddleName",
+          dc.LastName AS "LastName",
+          dc.NameStyle AS "NameStyle",
+          dc.BirthDate AS "BirthDate",
+          dc.MaritalStatus AS "MaritalStatus",
+          dc.Suffix AS "Suffix",
+          dc.Gender AS "Gender",
+          dc.EmailAddress AS "EmailAddress",
+          dc.YearlyIncome AS "YearlyIncome",
+          dc.TotalChildren AS "TotalChildren",
+          dc.NumberChildrenAtHome AS "NumberChildrenAtHome",
+          dc.EnglishEducation AS "EnglishEducation",
+          dc.SpanishEducation AS "SpanishEducation",
+          dc.FrenchEducation AS "FrenchEducation",
+          dc.EnglishOccupation AS "EnglishOccupation",
+          dc.SpanishOccupation AS "SpanishOccupation",
+          dc.FrenchOccupation AS "FrenchOccupation",
+          dc.HouseOwnerFlag AS "HouseOwnerFlag",
+          dc.NumberCarsOwned AS "NumberCarsOwned",
+          dc.AddressLine1 AS "AddressLine1",
+          dc.AddressLine2 AS "AddressLine2",
+          dc.Phone AS "Phone",
+          dc.DateFirstPurchase AS "DateFirstPurchase",
+          dc.CommuteDistance AS "CommuteDistance"
+        FROM public.dimcustomer dc
+        LEFT JOIN public.dimgeography dg
+          ON dc.GeographyKey = dg.GeographyKey
+    primary_key: [CustomerAlternateKey]
+    compare_columns: [GeographyNaturalKey, Title, FirstName, MiddleName, LastName, NameStyle, BirthDate, MaritalStatus, Suffix, Gender, EmailAddress, YearlyIncome, TotalChildren, NumberChildrenAtHome, EnglishEducation, SpanishEducation, FrenchEducation, EnglishOccupation, SpanishOccupation, FrenchOccupation, HouseOwnerFlag, NumberCarsOwned, AddressLine1, AddressLine2, Phone, DateFirstPurchase, CommuteDistance]
+    validations:
+      aggregate:
+        group_by: [EnglishEducation]
+        metrics:
+          - column: YearlyIncome
+            checks: [sum, avg, count]
+      statistical:
+        metrics:
+          - column: YearlyIncome
+            checks: [mean, stddev, p50]
+  - name: fact_internet_sales_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH fact_source AS (
+          SELECT
+            soh.salesorderid,
+            sod.salesorderdetailid,
+            ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number,
+            soh.salesordernumber,
+            soh.revisionnumber,
+            soh.orderdate::date AS order_date,
+            soh.duedate::date AS due_date,
+            soh.shipdate::date AS ship_date,
+            soh.customerid,
+            soh.territoryid,
+            cr.tocurrencycode,
+            sod.productid,
+            sod.specialofferid,
+            sod.orderqty,
+            sod.unitprice,
+            sod.unitpricediscount,
+            sod.linetotal,
+            sod.carriertrackingnumber,
+            soh.purchaseordernumber,
+            soh.subtotal,
+            soh.taxamt,
+            soh.freight
+          FROM sales.salesorderheader soh
+          JOIN sales.salesorderdetail sod
+            ON soh.salesorderid = sod.salesorderid
+          LEFT JOIN sales.currencyrate cr
+            ON soh.currencyrateid = cr.currencyrateid
+          WHERE soh.onlineorderflag = TRUE
+        )
+        SELECT
+          fs.salesordernumber AS "SalesOrderNumber",
+          fs.sales_order_line_number AS "SalesOrderLineNumber",
+          p.productnumber AS "ProductAlternateKey",
+          COALESCE(c.accountnumber, 'AW' || LPAD(c.customerid::text, 8, '0')) AS "CustomerAlternateKey",
+          fs.specialofferid AS "PromotionAlternateKey",
+          COALESCE(fs.tocurrencycode, 'USD') AS "CurrencyAlternateKey",
+          fs.territoryid AS "SalesTerritoryAlternateKey",
+          TO_CHAR(fs.order_date, 'YYYYMMDD')::integer AS "OrderDateKey",
+          TO_CHAR(fs.due_date, 'YYYYMMDD')::integer AS "DueDateKey",
+          TO_CHAR(fs.ship_date, 'YYYYMMDD')::integer AS "ShipDateKey",
+          fs.revisionnumber AS "RevisionNumber",
+          fs.orderqty AS "OrderQuantity",
+          fs.unitprice AS "UnitPrice",
+          fs.orderqty * fs.unitprice AS "ExtendedAmount",
+          fs.unitpricediscount AS "UnitPriceDiscountPct",
+          fs.orderqty * fs.unitprice * fs.unitpricediscount AS "DiscountAmount",
+          p.standardcost AS "ProductStandardCost",
+          fs.orderqty * p.standardcost AS "TotalProductCost",
+          fs.linetotal AS "SalesAmount",
+          CASE WHEN fs.subtotal = 0 THEN 0 ELSE fs.taxamt * (fs.linetotal / fs.subtotal) END AS "TaxAmt",
+          CASE WHEN fs.subtotal = 0 THEN 0 ELSE fs.freight * (fs.linetotal / fs.subtotal) END AS "Freight",
+          fs.carriertrackingnumber AS "CarrierTrackingNumber",
+          fs.purchaseordernumber AS "CustomerPONumber",
+          fs.order_date AS "OrderDate",
+          fs.due_date AS "DueDate",
+          fs.ship_date AS "ShipDate"
+        FROM fact_source fs
+        JOIN production.product p
+          ON fs.productid = p.productid
+        JOIN sales.customer c
+          ON fs.customerid = c.customerid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          fis.SalesOrderNumber AS "SalesOrderNumber",
+          fis.SalesOrderLineNumber AS "SalesOrderLineNumber",
+          dp.ProductAlternateKey AS "ProductAlternateKey",
+          dc.CustomerAlternateKey AS "CustomerAlternateKey",
+          dpr.PromotionAlternateKey AS "PromotionAlternateKey",
+          dcu.CurrencyAlternateKey AS "CurrencyAlternateKey",
+          dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey",
+          fis.OrderDateKey AS "OrderDateKey",
+          fis.DueDateKey AS "DueDateKey",
+          fis.ShipDateKey AS "ShipDateKey",
+          fis.RevisionNumber AS "RevisionNumber",
+          fis.OrderQuantity AS "OrderQuantity",
+          fis.UnitPrice AS "UnitPrice",
+          fis.ExtendedAmount AS "ExtendedAmount",
+          fis.UnitPriceDiscountPct AS "UnitPriceDiscountPct",
+          fis.DiscountAmount AS "DiscountAmount",
+          fis.ProductStandardCost AS "ProductStandardCost",
+          fis.TotalProductCost AS "TotalProductCost",
+          fis.SalesAmount AS "SalesAmount",
+          fis.TaxAmt AS "TaxAmt",
+          fis.Freight AS "Freight",
+          fis.CarrierTrackingNumber AS "CarrierTrackingNumber",
+          fis.CustomerPONumber AS "CustomerPONumber",
+          fis.OrderDate AS "OrderDate",
+          fis.DueDate AS "DueDate",
+          fis.ShipDate AS "ShipDate"
+        FROM public.factinternetsales fis
+        LEFT JOIN public.dimproduct dp
+          ON fis.ProductKey = dp.ProductKey
+        LEFT JOIN public.dimcustomer dc
+          ON fis.CustomerKey = dc.CustomerKey
+        LEFT JOIN public.dimpromotion dpr
+          ON fis.PromotionKey = dpr.PromotionKey
+        LEFT JOIN public.dimcurrency dcu
+          ON fis.CurrencyKey = dcu.CurrencyKey
+        LEFT JOIN public.dimsalesterritory dst
+          ON fis.SalesTerritoryKey = dst.SalesTerritoryKey
+    primary_key: [SalesOrderNumber, SalesOrderLineNumber]
+    compare_columns: [ProductAlternateKey, CustomerAlternateKey, PromotionAlternateKey, CurrencyAlternateKey, SalesTerritoryAlternateKey, OrderDateKey, DueDateKey, ShipDateKey, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber, OrderDate, DueDate, ShipDate]
+    validations:
+      aggregate:
+        group_by: [OrderDateKey]
+        metrics:
+          - column: OrderQuantity
+            checks: [sum, count]
+          - column: SalesAmount
+            checks: [sum, avg]
+          - column: ExtendedAmount
+            checks: [sum]
+      statistical:
+        metrics:
+          - column: UnitPrice
+            checks: [mean, stddev, p50]
+          - column: SalesAmount
+            checks: [mean, stddev]
+          - column: OrderQuantity
+            checks: [mean, stddev]
+  - name: fact_internet_sales_reason_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH fact_lines AS (
+          SELECT
+            soh.salesorderid,
+            soh.salesordernumber,
+            sod.salesorderdetailid,
+            ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number
+          FROM sales.salesorderheader soh
+          JOIN sales.salesorderdetail sod
+            ON soh.salesorderid = sod.salesorderid
+          WHERE soh.onlineorderflag = TRUE
+        )
+        SELECT
+          fl.salesordernumber AS "SalesOrderNumber",
+          fl.sales_order_line_number AS "SalesOrderLineNumber",
+          sohsr.salesreasonid AS "SalesReasonAlternateKey"
+        FROM fact_lines fl
+        JOIN sales.salesorderheadersalesreason sohsr
+          ON fl.salesorderid = sohsr.salesorderid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          fis.SalesOrderNumber AS "SalesOrderNumber",
+          fis.SalesOrderLineNumber AS "SalesOrderLineNumber",
+          dsr.SalesReasonAlternateKey AS "SalesReasonAlternateKey"
+        FROM public.factinternetsalesreason fisr
+        JOIN public.factinternetsales fis
+          ON fisr.SalesOrderNumber = fis.SalesOrderNumber
+         AND fisr.SalesOrderLineNumber = fis.SalesOrderLineNumber
+        JOIN public.dimsalesreason dsr
+          ON fisr.SalesReasonKey = dsr.SalesReasonKey
+    primary_key: [SalesOrderNumber, SalesOrderLineNumber, SalesReasonAlternateKey]
+    compare_columns: []

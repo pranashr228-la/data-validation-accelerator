@@ -1,4 +1,4 @@
-import duckdb
+import psycopg
 
 from dva.config.loader import load_config
 from dva.config.validator import validate_config
@@ -17,28 +17,27 @@ def test_customer_table_validation_detects_seeded_discrepancies(tmp_path):
     assert summary.failed_count == 1
 
     run_dir = tmp_path / config.project.name / f"run_id={summary.run_id}"
-    con = duckdb.connect(":memory:")
 
-    hash_summary = con.execute(
-        f"SELECT * FROM read_parquet('{(run_dir / 'hash_summary.parquet').as_posix()}')"
-    ).fetchone()
-    # run_id, dataset_name, source_row_count, target_row_count, matched_count,
-    # missing_count, extra_count, mismatch_count, status
-    assert hash_summary[5] == 2  # missing_count
-    assert hash_summary[6] == 1  # extra_count
-    assert hash_summary[7] == 1  # mismatch_count
+    with psycopg.connect(orchestrator.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT missing_count, extra_count, mismatch_count
+                FROM dva.hash_summary
+                WHERE run_id = %s
+                """,
+                (summary.run_id,),
+            )
+            hash_summary = cur.fetchone()
+            assert hash_summary[0] == 2  # missing_count
+            assert hash_summary[1] == 1  # extra_count
+            assert hash_summary[2] == 1  # mismatch_count
 
-    duplicate_keys = con.execute(
-        f"SELECT COUNT(*) FROM read_parquet('{(run_dir / 'duplicate_keys.parquet').as_posix()}')"
-    ).fetchone()[0]
-    assert duplicate_keys == 1
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.duplicate_keys WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] == 1
 
-    for artifact in (
-        "manifest.json",
-        "execution_logs.jsonl",
-        "run_summary.parquet",
-        "dataset_summary.parquet",
-        "rule_results.parquet",
-        "validation_issues.parquet",
-    ):
+    for artifact in ("manifest.json", "execution_logs.jsonl"):
         assert (run_dir / artifact).exists(), f"missing {artifact}"

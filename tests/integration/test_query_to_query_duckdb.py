@@ -1,3 +1,5 @@
+import psycopg
+
 from dva.config.loader import load_config
 from dva.config.validator import validate_config
 from dva.engine.orchestrator import Orchestrator
@@ -12,6 +14,15 @@ def test_fact_order_query_to_query_join_and_detects_mismatch(tmp_path):
 
     assert summary.status == "FAIL"
 
-    run_dir = tmp_path / config.project.name / f"run_id={summary.run_id}"
-    assert (run_dir / "hash_mismatches.parquet").exists()
-    assert (run_dir / "missing_records.parquet").exists()
+    with psycopg.connect(orchestrator.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.hash_mismatches WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] >= 1
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.missing_records WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] >= 1

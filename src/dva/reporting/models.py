@@ -26,6 +26,8 @@ class DatasetSummary(BaseModel):
     run_id: str
     dataset_name: str
     mapping_mode: str
+    source_connection: str | None = None
+    target_connection: str | None = None
     status: Status
     source_count: int | None = None
     target_count: int | None = None

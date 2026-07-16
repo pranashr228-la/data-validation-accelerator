@@ -1,4 +1,4 @@
-import duckdb
+import psycopg
 
 from dva.config.loader import load_config
 from dva.config.validator import validate_config
@@ -14,11 +14,13 @@ def test_parquet_to_parquet_detects_missing_record(tmp_path):
 
     assert summary.status == "FAIL"
 
-    run_dir = tmp_path / config.project.name / f"run_id={summary.run_id}"
-    con = duckdb.connect(":memory:")
-    missing = con.execute(
-        f"SELECT COUNT(*) FROM read_parquet('{(run_dir / 'missing_records.parquet').as_posix()}')"
-    ).fetchone()[0]
+    with psycopg.connect(orchestrator.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.missing_records WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            missing = cur.fetchone()[0]
     assert missing == 1
 
 
@@ -30,3 +32,11 @@ def test_schema_contract_only_config_passes(tmp_path):
     summary = orchestrator.run_validation()
 
     assert summary.status == "PASS"
+
+    with psycopg.connect(orchestrator.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.run_summary WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] == 1

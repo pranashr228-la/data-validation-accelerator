@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 import pyarrow as pa
 import snowflake.connector
 
@@ -18,15 +20,18 @@ class SnowflakeConnector(Connector):
 
     def connect(self) -> None:
         cfg = self._config
-        self._conn = snowflake.connector.connect(
-            account=cfg.account,
-            user=cfg.username,
-            password=cfg.password,
-            warehouse=cfg.warehouse,
-            database=cfg.database,
-            schema=cfg.schema_name,
-            role=cfg.role,
-        )
+        connect_kwargs: dict = {
+            "account": cfg.account,
+            "user": cfg.username,
+            "password": cfg.password,
+            "warehouse": cfg.warehouse,
+            "database": cfg.database,
+            "schema": cfg.schema_name,
+            "role": cfg.role,
+        }
+        if os.environ.get("SNOWFLAKE_OCSP_FAIL_OPEN", "").lower() in ("1", "true", "yes"):
+            connect_kwargs["ocsp_fail_open"] = True
+        self._conn = snowflake.connector.connect(**connect_kwargs)
 
     def close(self) -> None:
         if self._conn is not None:

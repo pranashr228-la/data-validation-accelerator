@@ -71,3 +71,10 @@ datasets:
             handling: system_generated
           - column: CUSTOMER_NAME
             handling: derived
+
+      count: { enabled: false }
+      duplicate_keys: { enabled: false }
+      row_hash: { enabled: false }
+      aggregate: { enabled: false }
+      statistical: { enabled: false }
+      data_quality: { enabled: false }

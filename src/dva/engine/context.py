@@ -10,7 +10,7 @@ import duckdb
 from dva.config.models import DatasetConfig, HashDefaults, RootConfig
 from dva.connectors.base import Connector
 from dva.dialects.base import SQLDialect
-from dva.reporting.jsonl_logger import JsonlLogger
+from dva.engine.run_scope import RunScope
 from dva.reporting.writer import ReportCollector
 
 
@@ -24,6 +24,7 @@ class RunContext:
     scratch_duckdb: duckdb.DuckDBPyConnection = field(
         default_factory=lambda: duckdb.connect(":memory:")
     )
+    scope: RunScope = field(default_factory=RunScope)
 
     @property
     def hash_defaults(self) -> HashDefaults:

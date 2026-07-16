@@ -1,8 +1,8 @@
-"""Accumulates report rows across a run and flushes them to Parquet."""
+"""Accumulates report rows across a run and flushes them to Postgres."""
 
 from __future__ import annotations
 
-from pathlib import Path
+import psycopg
 
 from dva.issues.model import ValidationIssue
 from dva.reporting.models import (
@@ -11,6 +11,7 @@ from dva.reporting.models import (
     DataQualityResult,
     DatasetSummary,
     DuplicateKey,
+    ExecutionLog,
     ExtraRecord,
     HashMismatch,
     HashSummary,
@@ -20,7 +21,7 @@ from dva.reporting.models import (
     SchemaResult,
     StatisticalResult,
 )
-from dva.reporting.parquet_writer import write_models_to_parquet
+from dva.reporting.postgres_writer import bulk_insert
 
 
 class ReportCollector:
@@ -41,25 +42,22 @@ class ReportCollector:
         self.duplicate_keys: list[DuplicateKey] = []
         self.dq_results: list[DataQualityResult] = []
         self.validation_issues: list[ValidationIssue] = []
+        self.execution_logs: list[ExecutionLog] = []
 
-    def write_all(self, run_dir: Path) -> None:
-        write_models_to_parquet(run_dir / "run_summary.parquet", list(self.run_summaries))
-        write_models_to_parquet(run_dir / "dataset_summary.parquet", list(self.dataset_summaries))
-        write_models_to_parquet(run_dir / "rule_results.parquet", list(self.rule_results))
-        write_models_to_parquet(run_dir / "schema_results.parquet", list(self.schema_results))
-        write_models_to_parquet(run_dir / "count_results.parquet", list(self.count_results))
-        write_models_to_parquet(
-            run_dir / "aggregate_results.parquet", list(self.aggregate_results)
-        )
-        write_models_to_parquet(
-            run_dir / "statistical_results.parquet", list(self.statistical_results)
-        )
-        write_models_to_parquet(run_dir / "hash_summary.parquet", list(self.hash_summaries))
-        write_models_to_parquet(run_dir / "hash_mismatches.parquet", list(self.hash_mismatches))
-        write_models_to_parquet(run_dir / "missing_records.parquet", list(self.missing_records))
-        write_models_to_parquet(run_dir / "extra_records.parquet", list(self.extra_records))
-        write_models_to_parquet(run_dir / "duplicate_keys.parquet", list(self.duplicate_keys))
-        write_models_to_parquet(run_dir / "dq_results.parquet", list(self.dq_results))
-        write_models_to_parquet(
-            run_dir / "validation_issues.parquet", list(self.validation_issues)
-        )
+    def write_all(self, conn: psycopg.Connection) -> None:
+        """Flush all accumulated report rows to Postgres."""
+        bulk_insert(conn, "dva.run_summary", list(self.run_summaries))
+        bulk_insert(conn, "dva.dataset_summary", list(self.dataset_summaries))
+        bulk_insert(conn, "dva.rule_results", list(self.rule_results))
+        bulk_insert(conn, "dva.schema_results", list(self.schema_results))
+        bulk_insert(conn, "dva.count_results", list(self.count_results))
+        bulk_insert(conn, "dva.aggregate_results", list(self.aggregate_results))
+        bulk_insert(conn, "dva.statistical_results", list(self.statistical_results))
+        bulk_insert(conn, "dva.hash_summary", list(self.hash_summaries))
+        bulk_insert(conn, "dva.hash_mismatches", list(self.hash_mismatches))
+        bulk_insert(conn, "dva.missing_records", list(self.missing_records))
+        bulk_insert(conn, "dva.extra_records", list(self.extra_records))
+        bulk_insert(conn, "dva.duplicate_keys", list(self.duplicate_keys))
+        bulk_insert(conn, "dva.dq_results", list(self.dq_results))
+        bulk_insert(conn, "dva.validation_issues", list(self.validation_issues))
+        bulk_insert(conn, "dva.execution_logs", list(self.execution_logs))

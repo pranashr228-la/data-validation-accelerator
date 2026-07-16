@@ -1,6 +1,9 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import psycopg
+import pytest
+
 from dva.config.models import (
     DatasetConfig,
     DatasetSide,
@@ -10,6 +13,8 @@ from dva.config.models import (
     RootConfig,
 )
 from dva.engine.orchestrator import Orchestrator
+
+pytestmark = pytest.mark.usefixtures("postgres_db")
 
 
 def test_fail_fast_on_exception_still_writes_reports(tmp_path):
@@ -47,10 +52,22 @@ def test_fail_fast_on_exception_still_writes_reports(tmp_path):
         "dva.engine.dataset_runner.VALIDATION_PLAN",
         [("boom", lambda _ctx: (_ for _ in ()).throw(RuntimeError("boom")))],
     ):
-        summary = Orchestrator(config).run_validation()
+        orchestrator = Orchestrator(config)
+        summary = orchestrator.run_validation()
 
     assert summary.status == "ERROR"
     run_dir = Path(tmp_path) / "runs" / "p" / f"run_id={summary.run_id}"
-    assert (run_dir / "run_summary.parquet").exists()
     assert (run_dir / "manifest.json").exists()
-    assert (run_dir / "dataset_summary.parquet").exists()
+
+    with psycopg.connect(orchestrator.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.run_summary WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] == 1
+            cur.execute(
+                "SELECT COUNT(*) FROM dva.dataset_summary WHERE run_id = %s",
+                (summary.run_id,),
+            )
+            assert cur.fetchone()[0] == 1

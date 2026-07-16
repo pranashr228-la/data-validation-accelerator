@@ -11,3 +11,7 @@ security find-certificate -a -p /System/Library/Keychains/SystemRootCertificates
 ```
 
 These are root CA certificates (public keys), not secrets.
+
+`dva` auto-loads this bundle for Snowflake/HTTPS clients when the file exists
+(see `src/dva/config/certs.py`). If Snowflake fails with `certificate verify failed`
+behind Zscaler, regenerate this file and retry.

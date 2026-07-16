@@ -7,6 +7,7 @@ from typing import Any
 
 import yaml
 
+from dva.config.defaults import apply_defaults
 from dva.config.env import load_dotenv_once, substitute_env_vars
 from dva.config.models import RootConfig
 
@@ -35,4 +36,5 @@ def load_config(path: str) -> RootConfig:
     load_dotenv_once()
     data = yaml.safe_load(config_path.read_text()) or {}
     substituted = _substitute_recursive(data)
-    return RootConfig.model_validate(substituted)
+    config = RootConfig.model_validate(substituted)
+    return apply_defaults(config)

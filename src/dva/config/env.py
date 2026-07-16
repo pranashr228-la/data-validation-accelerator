@@ -12,7 +12,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-_VAR_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+_VAR_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
 
 _dotenv_loaded = False
 
@@ -36,8 +36,11 @@ def substitute_env_vars(text: str) -> str:
 
     def _replace(match: re.Match[str]) -> str:
         name = match.group(1)
-        if name not in os.environ:
-            raise KeyError(f"Environment variable '{name}' referenced in config is not set")
-        return os.environ[name]
+        default = match.group(2)
+        if name in os.environ:
+            return os.environ[name]
+        if default is not None:
+            return default
+        raise KeyError(f"Environment variable '{name}' referenced in config is not set")
 
     return _VAR_PATTERN.sub(_replace, text)

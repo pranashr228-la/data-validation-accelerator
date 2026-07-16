@@ -1,7 +1,53 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dva
+      POSTGRES_PASSWORD: dva
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh
+      - ./sql/postgres/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+      - ./sql/postgres/002_views.sql:/docker-entrypoint-initdb.d/002_views.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dva -d dva"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   dva:
     build: .
     image: data-validation-accelerator:latest
+    environment:
+      DVA_DATABASE_URL: postgresql://dva:dva@postgres:5432/dva
     volumes:
       - ./validation_runs:/app/validation_runs
+      - ./sample_data:/app/sample_data
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: ["run", "--config", "configs/examples/postgres_to_snowflake_table.yaml"]
+
+  superset:
+    build:
+      context: .
+      dockerfile: superset/Dockerfile
+    image: data-validation-accelerator-superset:latest
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_SECRET_KEY: dva-local-demo-secret-key-change-in-prod
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://dva:dva@postgres:5432/superset
+      DVA_DATABASE_URL: postgresql://dva:dva@postgres:5432/dva
+    volumes:
+      - ./superset/superset_config.py:/app/pythonpath/superset_config.py
+      - ./superset/bootstrap:/app/bootstrap
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -9,7 +9,7 @@ from dva.engine.execution_plan import VALIDATION_PLAN
 from dva.normalization.sql_builder import build_base_sql
 from dva.reporting.models import DatasetSummary
 from dva.reporting.models import ExecutionLog
-from dva.config.models import DatasetConfig
+from dva.engine.run_scope import DEFAULT_VALIDATION_TYPES
 from dva.utils.time import to_iso, utcnow
 
 
@@ -34,7 +34,12 @@ def run_dataset(
     rule_count_before = len(run.report.rule_results)
     dataset_status = "PASS"
     try:
-        for _name, validation_fn in VALIDATION_PLAN:
+        for validation_name, validation_fn in VALIDATION_PLAN:
+            if (
+                validation_name in DEFAULT_VALIDATION_TYPES
+                and not run.scope.includes_validation(validation_name)
+            ):
+                continue
             validation_fn(ctx)
     except Exception as exc:  # noqa: BLE001 - captured as a dataset-level error
         dataset_status = "ERROR"
@@ -67,6 +72,8 @@ def run_dataset(
         run_id=run.run_id,
         dataset_name=dataset.name,
         mapping_mode=dataset.mapping_mode,
+        source_connection=dataset.source.connection,
+        target_connection=dataset.target.connection,
         status=dataset_status,
         source_count=count_result.source_count if count_result else None,
         target_count=count_result.target_count if count_result else None,

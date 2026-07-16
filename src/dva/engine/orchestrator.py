@@ -7,6 +7,8 @@ from dva.connectors.base import Connector
 from dva.connectors.registry import create_connector
 from dva.engine.context import RunContext
 from dva.engine.dataset_runner import run_dataset
+from dva.engine.run_scope import RunScope
+from dva.reporting.database import apply_schema, connect, get_database_url
 from dva.reporting.jsonl_logger import JsonlLogger
 from dva.reporting.manifest import write_manifest
 from dva.reporting.models import ExecutionLog, RunSummary
@@ -17,17 +19,26 @@ from dva.utils.time import to_iso, utcnow
 
 
 class Orchestrator:
-    def __init__(self, config: RootConfig, output_path: str | None = None) -> None:
+    def __init__(
+        self,
+        config: RootConfig,
+        output_path: str | None = None,
+        scope: RunScope | None = None,
+    ) -> None:
         self.config = config
         self.output_path = output_path or config.project.output_path
+        self.database_url = get_database_url(config.project.results_database_url)
+        self.scope = scope or RunScope()
 
     def run_validation(self) -> RunSummary:
         run_id = generate_run_id(utcnow())
         run_directory = ensure_dir(
             build_run_dir(self.output_path, self.config.project.name, run_id)
         )
-        run = RunContext(run_id=run_id, config=self.config, run_dir=run_directory)
-        run.logger = JsonlLogger(run_directory)
+        run = RunContext(
+            run_id=run_id, config=self.config, run_dir=run_directory, scope=self.scope
+        )
+        run.logger = JsonlLogger(run_directory, run.report)
         start = to_iso(utcnow())
 
         connectors: dict[str, Connector] = {
@@ -38,6 +49,8 @@ class Orchestrator:
 
         try:
             for dataset in self.config.datasets:
+                if not run.scope.includes_dataset(dataset.name):
+                    continue
                 run.logger.log(
                     ExecutionLog(
                         run_id=run_id, timestamp=to_iso(utcnow()), level="INFO",
@@ -82,7 +95,11 @@ class Orchestrator:
             error_count=sum(1 for d in run.report.dataset_summaries if d.status == "ERROR"),
         )
         run.report.run_summaries.append(run_summary)
-        run.report.write_all(run_directory)
+
+        with connect(self.database_url) as conn:
+            apply_schema(conn)
+            run.report.write_all(conn)
+
         write_manifest(
             run_directory,
             {
@@ -94,21 +111,9 @@ class Orchestrator:
                 "end_time": run_summary.end_time,
                 "dataset_count": run_summary.dataset_count,
                 "datasets": [d.name for d in self.config.datasets],
+                "results_database_url": self.database_url,
                 "output_files": [
-                    "run_summary.parquet",
-                    "dataset_summary.parquet",
-                    "rule_results.parquet",
-                    "schema_results.parquet",
-                    "count_results.parquet",
-                    "aggregate_results.parquet",
-                    "statistical_results.parquet",
-                    "hash_summary.parquet",
-                    "hash_mismatches.parquet",
-                    "missing_records.parquet",
-                    "extra_records.parquet",
-                    "duplicate_keys.parquet",
-                    "dq_results.parquet",
-                    "validation_issues.parquet",
+                    "manifest.json",
                     "execution_logs.jsonl",
                 ],
             },

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal, Union
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 # --------------------------------------------------------------------------
 # Project / execution
@@ -21,6 +21,7 @@ class ProjectConfig(BaseModel):
     name: str
     environment: str = "dev"
     output_path: str = "./validation_runs"
+    results_database_url: str | None = None
 
 
 class ExecutionConfig(BaseModel):
@@ -42,7 +43,7 @@ class PostgresConnectionConfig(BaseModel):
     port: int = 5432
     database: str
     schema_name: str = Field(default="public", alias="schema")
-    username: str
+    username: str = Field(validation_alias=AliasChoices("username", "user"))
     password: str
 
     model_config = {"populate_by_name": True}
@@ -54,7 +55,7 @@ class SnowflakeConnectionConfig(BaseModel):
     warehouse: str
     database: str
     schema_name: str = Field(alias="schema")
-    username: str
+    username: str = Field(validation_alias=AliasChoices("username", "user"))
     password: str
     role: str | None = None
 
@@ -119,10 +120,6 @@ class HashDefaults(BaseModel):
     timestamp_timezone: str = "UTC"
 
 
-class DefaultsConfig(BaseModel):
-    hash: HashDefaults = Field(default_factory=HashDefaults)
-
-
 # --------------------------------------------------------------------------
 # Tolerance
 # --------------------------------------------------------------------------
@@ -142,13 +139,15 @@ class ToleranceConfig(BaseModel):
 class DatasetSide(BaseModel):
     connection: str
     object: str | None = None
-    sql: str | None = None
+    sql: str | None = Field(default=None, validation_alias=AliasChoices("sql", "query"))
     filter: str | None = None
+
+    model_config = {"populate_by_name": True}
 
     @model_validator(mode="after")
     def _one_of_object_or_sql(self) -> "DatasetSide":
         if bool(self.object) == bool(self.sql):
-            raise ValueError("Exactly one of 'object' or 'sql' must be set on a dataset side")
+            raise ValueError("Exactly one of 'object' or 'sql'/'query' must be set on a dataset side")
         return self
 
 
@@ -176,12 +175,12 @@ class SchemaContractConfig(BaseModel):
 
 
 class CountConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     tolerance: ToleranceConfig | None = None
 
 
 class DuplicateKeysConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
 
 
 # --------------------------------------------------------------------------
@@ -190,7 +189,7 @@ class DuplicateKeysConfig(BaseModel):
 
 
 class RowHashConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     max_mismatch_samples: int = 10000
     write_full_mismatches: bool = False
 
@@ -209,7 +208,7 @@ class AggregateMetric(BaseModel):
 
 
 class AggregateConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     group_by: list[str] = Field(default_factory=list)
     metrics: list[AggregateMetric] = Field(default_factory=list)
 
@@ -230,7 +229,7 @@ class StatisticalMetric(BaseModel):
 
 
 class StatisticalConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     metrics: list[StatisticalMetric] = Field(default_factory=list)
 
 
@@ -259,7 +258,7 @@ class DataQualityRule(BaseModel):
 
 
 class DataQualityConfig(BaseModel):
-    enabled: bool = False
+    enabled: bool = True
     rules: list[DataQualityRule] = Field(default_factory=list)
 
 
@@ -276,6 +275,11 @@ class ValidationsConfig(BaseModel):
     aggregate: AggregateConfig = Field(default_factory=AggregateConfig)
     statistical: StatisticalConfig = Field(default_factory=StatisticalConfig)
     data_quality: DataQualityConfig = Field(default_factory=DataQualityConfig)
+
+
+class DefaultsConfig(BaseModel):
+    hash: HashDefaults = Field(default_factory=HashDefaults)
+    validations: ValidationsConfig = Field(default_factory=ValidationsConfig)
 
 
 # --------------------------------------------------------------------------
