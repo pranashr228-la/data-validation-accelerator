@@ -3,7 +3,7 @@ FROM apache/superset:4.1.2
 USER root
 
 # Trust corporate/system CA bundle (same pattern as the main DVA Dockerfile).
-COPY certs/system-ca-bundle.pem /usr/local/share/ca-certificates/system-ca-bundle.crt
+COPY certs/zscaler.pem /usr/local/share/ca-certificates/zscaler.crt
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && update-ca-certificates \

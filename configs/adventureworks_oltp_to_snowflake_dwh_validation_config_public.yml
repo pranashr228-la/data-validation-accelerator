@@ -104,9 +104,9 @@ datasets:
       query: |
         SELECT
           pc.productcategoryid AS "ProductCategoryAlternateKey",
-          TRIM(pc.name) AS "EnglishProductCategoryName",
-          TRIM(pc.name) AS "SpanishProductCategoryName",
-          TRIM(pc.name) AS "FrenchProductCategoryName"
+          COALESCE(TRIM(pc.name), 'NA') AS "EnglishProductCategoryName",
+          NULL AS "SpanishProductCategoryName",
+          NULL AS "FrenchProductCategoryName"
         FROM production.productcategory pc
     target:
       connection: target_snowflake
@@ -114,8 +114,8 @@ datasets:
         SELECT
           ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
           EnglishProductCategoryName AS "EnglishProductCategoryName",
-          EnglishProductCategoryName AS "SpanishProductCategoryName",
-          EnglishProductCategoryName AS "FrenchProductCategoryName"
+          SpanishProductCategoryName AS "SpanishProductCategoryName",
+          FrenchProductCategoryName AS "FrenchProductCategoryName"
         FROM public.dimproductcategory
     primary_key: [ProductCategoryAlternateKey]
     compare_columns: [EnglishProductCategoryName, SpanishProductCategoryName, FrenchProductCategoryName]
@@ -127,9 +127,9 @@ datasets:
         SELECT
           ps.productsubcategoryid AS "ProductSubcategoryAlternateKey",
           ps.productcategoryid AS "ProductCategoryAlternateKey",
-          TRIM(ps.name) AS "EnglishProductSubcategoryName",
-          TRIM(ps.name) AS "SpanishProductSubcategoryName",
-          TRIM(ps.name) AS "FrenchProductSubcategoryName"
+          COALESCE(TRIM(ps.name), 'NA') AS "EnglishProductSubcategoryName",
+          NULL AS "SpanishProductSubcategoryName",
+          NULL AS "FrenchProductSubcategoryName"
         FROM production.productsubcategory ps
     target:
       connection: target_snowflake
@@ -310,9 +310,9 @@ datasets:
       connection: source_postgres
       query: |
         SELECT
-          TRIM(currencycode) AS "CurrencyAlternateKey",
-          TRIM(name) AS "CurrencyName"
-        FROM sales.currency
+          TRIM(c.currencycode) AS "CurrencyAlternateKey",
+          TRIM(c.name) AS "CurrencyName"
+        FROM sales.currency c
     target:
       connection: target_snowflake
       query: |
@@ -328,22 +328,22 @@ datasets:
       connection: source_postgres
       query: |
         SELECT
-          specialofferid AS "PromotionAlternateKey",
-          TRIM(description) AS "EnglishPromotionName",
-          TRIM(description) AS "SpanishPromotionName",
-          TRIM(description) AS "FrenchPromotionName",
-          discountpct AS "DiscountPct",
-          TRIM(type) AS "EnglishPromotionType",
-          TRIM(type) AS "SpanishPromotionType",
-          TRIM(type) AS "FrenchPromotionType",
-          TRIM(category) AS "EnglishPromotionCategory",
-          TRIM(category) AS "SpanishPromotionCategory",
-          TRIM(category) AS "FrenchPromotionCategory",
-          startdate AS "StartDate",
-          enddate AS "EndDate",
-          minqty AS "MinQty",
-          maxqty AS "MaxQty"
-        FROM sales.specialoffer
+          so.specialofferid AS "PromotionAlternateKey",
+          TRIM(so.description) AS "EnglishPromotionName",
+          NULL AS "SpanishPromotionName",
+          NULL AS "FrenchPromotionName",
+          so.discountpct AS "DiscountPct",
+          TRIM(so.type) AS "EnglishPromotionType",
+          NULL AS "SpanishPromotionType",
+          NULL AS "FrenchPromotionType",
+          TRIM(so.category) AS "EnglishPromotionCategory",
+          NULL AS "SpanishPromotionCategory",
+          NULL AS "FrenchPromotionCategory",
+          so.startdate AS "StartDate",
+          so.enddate AS "EndDate",
+          so.minqty AS "MinQty",
+          so.maxqty AS "MaxQty"
+        FROM sales.specialoffer so
     target:
       connection: target_snowflake
       query: |
@@ -380,11 +380,12 @@ datasets:
         SELECT
           st.territoryid AS "SalesTerritoryAlternateKey",
           TRIM(st.name) AS "SalesTerritoryRegion",
-          TRIM(cr.name) AS "SalesTerritoryCountry",
-          TRIM(st."group") AS "SalesTerritoryGroup"
+          COALESCE(TRIM(cr.name), 'NA') AS "SalesTerritoryCountry",
+          TRIM(st."group") AS "SalesTerritoryGroup",
+          NULL AS "SalesTerritoryImage"
         FROM sales.salesterritory st
         LEFT JOIN person.countryregion cr
-          ON st.countryregioncode = cr.countryregioncode
+          ON UPPER(TRIM(st.countryregioncode)) = UPPER(TRIM(cr.countryregioncode))
     target:
       connection: target_snowflake
       query: |
@@ -392,30 +393,32 @@ datasets:
           SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey",
           SalesTerritoryRegion AS "SalesTerritoryRegion",
           SalesTerritoryCountry AS "SalesTerritoryCountry",
-          SalesTerritoryGroup AS "SalesTerritoryGroup"
+          SalesTerritoryGroup AS "SalesTerritoryGroup",
+          SalesTerritoryImage AS "SalesTerritoryImage"
         FROM public.dimsalesterritory
     primary_key: [SalesTerritoryAlternateKey]
-    compare_columns: [SalesTerritoryRegion, SalesTerritoryCountry, SalesTerritoryGroup]
+    compare_columns: [SalesTerritoryRegion, SalesTerritoryCountry, SalesTerritoryGroup, SalesTerritoryImage]
   - name: dim_geography_validation
     mapping_mode: query_to_query
     source:
       connection: source_postgres
       query: |
         SELECT DISTINCT
-          CONCAT_WS('|', COALESCE(TRIM(a.city), ''), COALESCE(TRIM(sp.stateprovincecode), ''), COALESCE(TRIM(a.postalcode), ''), COALESCE(TRIM(sp.countryregioncode), '')) AS "GeographyNaturalKey",
+          CONCAT_WS('|', COALESCE(TRIM(a.city), ''), COALESCE(TRIM(sp.stateprovincecode), ''), COALESCE(TRIM(a.postalcode), ''), COALESCE(TRIM(cr.countryregioncode), '')) AS "GeographyNaturalKey",
           TRIM(a.city) AS "City",
           TRIM(sp.stateprovincecode) AS "StateProvinceCode",
           TRIM(sp.name) AS "StateProvinceName",
-          TRIM(sp.countryregioncode) AS "CountryRegionCode",
+          TRIM(cr.countryregioncode) AS "CountryRegionCode",
           TRIM(cr.name) AS "EnglishCountryRegionName",
-          TRIM(cr.name) AS "SpanishCountryRegionName",
-          TRIM(cr.name) AS "FrenchCountryRegionName",
+          NULL AS "SpanishCountryRegionName",
+          NULL AS "FrenchCountryRegionName",
           TRIM(a.postalcode) AS "PostalCode",
-          sp.territoryid AS "SalesTerritoryAlternateKey"
+          sp.territoryid AS "SalesTerritoryAlternateKey",
+          NULL AS "IpAddressLocator"
         FROM person.address a
-        JOIN person.stateprovince sp
+        LEFT JOIN person.stateprovince sp
           ON a.stateprovinceid = sp.stateprovinceid
-        JOIN person.countryregion cr
+        LEFT JOIN person.countryregion cr
           ON sp.countryregioncode = cr.countryregioncode
     target:
       connection: target_snowflake
@@ -430,12 +433,13 @@ datasets:
           dg.SpanishCountryRegionName AS "SpanishCountryRegionName",
           dg.FrenchCountryRegionName AS "FrenchCountryRegionName",
           dg.PostalCode AS "PostalCode",
-          dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey"
+          dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey",
+          dg.IpAddressLocator AS "IpAddressLocator"
         FROM public.dimgeography dg
         LEFT JOIN public.dimsalesterritory dst
           ON dg.SalesTerritoryKey = dst.SalesTerritoryKey
     primary_key: [GeographyNaturalKey]
-    compare_columns: [City, StateProvinceCode, StateProvinceName, CountryRegionCode, EnglishCountryRegionName, SpanishCountryRegionName, FrenchCountryRegionName, PostalCode, SalesTerritoryAlternateKey]
+    compare_columns: [City, StateProvinceCode, StateProvinceName, CountryRegionCode, EnglishCountryRegionName, SpanishCountryRegionName, FrenchCountryRegionName, PostalCode, SalesTerritoryAlternateKey, IpAddressLocator]
   - name: dim_customer_validation
     mapping_mode: query_to_query
     source:
