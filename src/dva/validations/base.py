@@ -23,6 +23,8 @@ def compare_values(
         status: Status = "PASS" if source_value == target_value else "FAIL"
         return None, None, status
 
+    source_value = float(source_value)
+    target_value = float(target_value)
     difference = source_value - target_value
     if tolerance.type == "absolute":
         magnitude = abs(difference)

@@ -213,8 +213,8 @@ datasets:
           p.weightunitmeasurecode AS "WeightUnitMeasureCode",
           p.sizeunitmeasurecode AS "SizeUnitMeasureCode",
           TRIM(p.name) AS "EnglishProductName",
-          product_descriptions.spanish_description AS "SpanishProductName",
-          product_descriptions.french_description AS "FrenchProductName",
+          NULL AS "SpanishProductName",
+          NULL AS "FrenchProductName",
           p.standardcost AS "StandardCost",
           p.finishedgoodsflag AS "FinishedGoodsFlag",
           COALESCE(p.color, 'NA') AS "Color",
@@ -232,7 +232,7 @@ datasets:
           END AS "SizeRange",
           p.weight AS "Weight",
           p.daystomanufacture AS "DaysToManufacture",
-          COALESCE(p.productline, 'NA') AS "ProductLine",
+          p.productline AS "ProductLine",
           CAST(p.listprice * 0.60 AS numeric(19,4)) AS "DealerPrice",
           COALESCE(p.class, 'NA') AS "Class",
           COALESCE(p.style, 'NA') AS "Style",
@@ -256,6 +256,7 @@ datasets:
           ON p.productmodelid = product_descriptions.productmodelid
         LEFT JOIN product_photo
           ON p.productid = product_photo.productid
+        WHERE p.sellenddate IS NULL
     target:
       connection: target_snowflake
       query: |
@@ -298,7 +299,8 @@ datasets:
           ON dp.ProductSubcategoryKey = dps.ProductSubcategoryKey
         LEFT JOIN public.dimproductcategory dpc
           ON dps.ProductCategoryKey = dpc.ProductCategoryKey
-        WHERE COALESCE(dp.Status, 'Current') = 'Current'
+        WHERE Status = 'Current'
+          AND EndDate IS NULL
     primary_key: [ProductAlternateKey]
     compare_columns: [ProductSubcategoryAlternateKey, ProductCategoryAlternateKey, WeightUnitMeasureCode, SizeUnitMeasureCode, EnglishProductName, SpanishProductName, FrenchProductName, StandardCost, FinishedGoodsFlag, Color, SafetyStockLevel, ReorderPoint, ListPrice, Size, SizeRange, Weight, DaysToManufacture, ProductLine, DealerPrice, Class, Style, ModelName, LargePhoto, EnglishDescription, FrenchDescription, ChineseDescription, ArabicDescription, HebrewDescription, ThaiDescription, GermanDescription, JapaneseDescription, TurkishDescription]
     validations:
@@ -383,15 +385,15 @@ datasets:
         SELECT
           CAST(so.specialofferid AS BIGINT) AS "PromotionAlternateKey",
           TRIM(so.description) AS "EnglishPromotionName",
-          TRIM(so.description) AS "SpanishPromotionName",
-          TRIM(so.description) AS "FrenchPromotionName",
+          NULL AS "SpanishPromotionName",
+          NULL AS "FrenchPromotionName",
           CAST(so.discountpct AS FLOAT) AS "DiscountPct",
           TRIM(so.type) AS "EnglishPromotionType",
-          TRIM(so.type) AS "SpanishPromotionType",
-          TRIM(so.type) AS "FrenchPromotionType",
+          NULL AS "SpanishPromotionType",
+          NULL AS "FrenchPromotionType",
           TRIM(so.category) AS "EnglishPromotionCategory",
-          TRIM(so.category) AS "SpanishPromotionCategory",
-          TRIM(so.category) AS "FrenchPromotionCategory",
+          NULL AS "SpanishPromotionCategory",
+          NULL AS "FrenchPromotionCategory",
           so.startdate AS "StartDate",
           so.enddate AS "EndDate",
           so.minqty AS "MinQty",
@@ -480,8 +482,8 @@ datasets:
           TRIM(sp.name) AS "StateProvinceName",
           TRIM(cr.countryregioncode) AS "CountryRegionCode",
           TRIM(cr.name) AS "EnglishCountryRegionName",
-          TRIM(cr.name) AS "SpanishCountryRegionName",
-          TRIM(cr.name) AS "FrenchCountryRegionName",
+          NULL AS "SpanishCountryRegionName",
+          NULL AS "FrenchCountryRegionName",
           TRIM(a.postalcode) AS "PostalCode",
           sp.territoryid AS "SalesTerritoryAlternateKey",
           NULL AS "IpAddressLocator"
@@ -563,11 +565,11 @@ datasets:
             NULLIF((xpath('string(//*[local-name()="YearlyIncome"])', p.demographics::xml))[1]::text, '')::text AS yearly_income,
             NULLIF((xpath('string(//*[local-name()="TotalChildren"])', p.demographics::xml))[1]::text, '')::integer AS total_children,
             NULLIF((xpath('string(//*[local-name()="NumberChildrenAtHome"])', p.demographics::xml))[1]::text, '')::integer AS number_children_at_home,
-            NULLIF((xpath('string(//*[local-name()="Education"])', p.demographics::xml))[1]::text, '') AS education,
-            NULLIF((xpath('string(//*[local-name()="Occupation"])', p.demographics::xml))[1]::text, '') AS occupation,
+            TRIM(NULLIF((xpath('string(//*[local-name()="Education"])', p.demographics::xml))[1]::text, '')) AS education,
+            TRIM(NULLIF((xpath('string(//*[local-name()="Occupation"])', p.demographics::xml))[1]::text, '')) AS occupation,
             NULLIF((xpath('string(//*[local-name()="HomeOwnerFlag"])', p.demographics::xml))[1]::text, '') AS home_owner_flag,
             NULLIF((xpath('string(//*[local-name()="NumberCarsOwned"])', p.demographics::xml))[1]::text, '')::integer AS number_cars_owned,
-            NULLIF((xpath('string(//*[local-name()="CommuteDistance"])', p.demographics::xml))[1]::text, '') AS commute_distance
+            TRIM(NULLIF((xpath('string(//*[local-name()="CommuteDistance"])', p.demographics::xml))[1]::text, '')) AS commute_distance
           FROM person.person p
         )
         SELECT
@@ -587,11 +589,11 @@ datasets:
           demographics.total_children AS "TotalChildren",
           demographics.number_children_at_home AS "NumberChildrenAtHome",
           demographics.education AS "EnglishEducation",
-          demographics.education AS "SpanishEducation",
-          demographics.education AS "FrenchEducation",
+          NULL AS "SpanishEducation",
+          NULL AS "FrenchEducation",
           demographics.occupation AS "EnglishOccupation",
-          demographics.occupation AS "SpanishOccupation",
-          demographics.occupation AS "FrenchOccupation",
+          NULL AS "SpanishOccupation",
+          NULL AS "FrenchOccupation",
           demographics.home_owner_flag AS "HouseOwnerFlag",
           demographics.number_cars_owned AS "NumberCarsOwned",
           pa.addressline1 AS "AddressLine1",
@@ -615,6 +617,7 @@ datasets:
         LEFT JOIN first_purchase
           ON c.customerid = first_purchase.customerid
         WHERE c.personid IS NOT NULL
+        AND demographics.education IS NOT NULL
     target:
       connection: target_snowflake
       query: |
@@ -675,7 +678,7 @@ datasets:
           SELECT
             soh.salesorderid,
             sod.salesorderdetailid,
-            sod.salesorderdetailid AS sales_order_line_number,
+            ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number,
             soh.salesordernumber,
             soh.revisionnumber,
             soh.orderdate AS order_date,
@@ -843,8 +846,8 @@ datasets:
     source:
       connection: source_postgres
       query: |
-        SELECT NULL::BIGINT AS "ParentDepartmentGroupKey", TRIM(v.department_group_name) AS "DepartmentGroupName"
-        FROM (VALUES ('Corporate'), ('Executive General and Administration'), ('Inventory Management'), ('Manufacturing'), ('Quality Assurance'), ('Research and Development'), ('Sales and Marketing')) v(department_group_name)
+        SELECT NULL::BIGINT AS "ParentDepartmentGroupKey", TRIM(d.groupname) AS "DepartmentGroupName"
+        FROM (SELECT DISTINCT groupname FROM humanresources.department) d
     target:
       connection: target_snowflake
       query: |
@@ -890,13 +893,13 @@ datasets:
     source:
       connection: source_postgres
       query: |
-        SELECT TRIM(e.nationalidnumber) AS "EmployeeNationalIDAlternateKey", TRIM(mgr.nationalidnumber) AS "ParentEmployeeNationalIDAlternateKey", sp.territoryid AS "SalesTerritoryAlternateKey", TRIM(p.firstname) AS "FirstName", TRIM(p.lastname) AS "LastName", TRIM(p.middlename) AS "MiddleName", p.namestyle AS "NameStyle", TRIM(e.jobtitle) AS "Title", e.hiredate::date AS "HireDate", e.birthdate::date AS "BirthDate", TRIM(e.loginid) AS "LoginID", TRIM(ea.emailaddress) AS "EmailAddress", TRIM(pp.phonenumber) AS "Phone", TRIM(e.maritalstatus) AS "MaritalStatus", NULL::text AS "EmergencyContactName", NULL::text AS "EmergencyContactPhone", e.salariedflag AS "SalariedFlag", TRIM(e.gender) AS "Gender", eph.payfrequency AS "PayFrequency", eph.rate AS "BaseRate", e.vacationhours AS "VacationHours", e.sickleavehours AS "SickLeaveHours", e.currentflag AS "CurrentFlag", CASE WHEN sp.businessentityid IS NULL THEN 0 ELSE 1 END AS "SalesPersonFlag", TRIM(d.name) AS "DepartmentName", e.hiredate::date AS "StartDate", CASE WHEN e.currentflag THEN NULL ELSE e.modifieddate::date END AS "EndDate", CASE WHEN e.currentflag THEN 'Current' ELSE 'Inactive' END AS "Status", NULL::bytea AS "EmployeePhoto"
-        FROM humanresources.employee e LEFT JOIN person.person p ON e.businessentityid=p.businessentityid LEFT JOIN person.emailaddress ea ON e.businessentityid=ea.businessentityid LEFT JOIN person.personphone pp ON e.businessentityid=pp.businessentityid LEFT JOIN sales.salesperson sp ON e.businessentityid=sp.businessentityid LEFT JOIN humanresources.employeepayhistory eph ON e.businessentityid=eph.businessentityid LEFT JOIN humanresources.employeedepartmenthistory edh ON e.businessentityid=edh.businessentityid AND edh.enddate IS NULL LEFT JOIN humanresources.department d ON edh.departmentid=d.departmentid LEFT JOIN humanresources.employee mgr ON e.organizationnode::text LIKE mgr.organizationnode::text || '%' AND (LENGTH(e.organizationnode::text) - LENGTH(REPLACE(e.organizationnode::text, '/', ''))) = (LENGTH(mgr.organizationnode::text) - LENGTH(REPLACE(mgr.organizationnode::text, '/', '')))+1
+        SELECT TRIM(e.nationalidnumber) AS "EmployeeNationalIDAlternateKey", TRIM(mgr.nationalidnumber) AS "ParentEmployeeNationalIDAlternateKey", addr_sp.territoryid AS "SalesTerritoryAlternateKey", TRIM(p.firstname) AS "FirstName", TRIM(p.lastname) AS "LastName", TRIM(p.middlename) AS "MiddleName", p.namestyle AS "NameStyle", TRIM(e.jobtitle) AS "Title", e.hiredate::date AS "HireDate", e.birthdate::date AS "BirthDate", TRIM(e.loginid) AS "LoginID", TRIM(ea.emailaddress) AS "EmailAddress", TRIM(pp.phonenumber) AS "Phone", TRIM(e.maritalstatus) AS "MaritalStatus", NULL::text AS "EmergencyContactName", NULL::text AS "EmergencyContactPhone", e.salariedflag AS "SalariedFlag", TRIM(e.gender) AS "Gender", eph.payfrequency AS "PayFrequency", eph.rate AS "BaseRate", e.vacationhours AS "VacationHours", e.sickleavehours AS "SickLeaveHours", e.currentflag AS "CurrentFlag", CASE WHEN sales_sp.businessentityid IS NULL THEN 0 ELSE 1 END AS "SalesPersonFlag", TRIM(d.name) AS "DepartmentName", e.hiredate::date AS "StartDate", CASE WHEN e.currentflag THEN NULL ELSE edh_last.enddate END AS "EndDate", CASE WHEN e.currentflag THEN 'Current' ELSE 'Inactive' END AS "Status", NULL::bytea AS "EmployeePhoto"
+        FROM humanresources.employee e LEFT JOIN person.person p ON e.businessentityid=p.businessentityid LEFT JOIN person.emailaddress ea ON e.businessentityid=ea.businessentityid LEFT JOIN person.personphone pp ON e.businessentityid=pp.businessentityid LEFT JOIN sales.salesperson sales_sp ON e.businessentityid=sales_sp.businessentityid LEFT JOIN LATERAL (SELECT payfrequency, rate FROM humanresources.employeepayhistory WHERE businessentityid=e.businessentityid ORDER BY ratechangedate DESC LIMIT 1) eph ON true LEFT JOIN humanresources.employeedepartmenthistory edh ON e.businessentityid=edh.businessentityid AND edh.enddate IS NULL LEFT JOIN humanresources.department d ON edh.departmentid=d.departmentid LEFT JOIN LATERAL (SELECT enddate FROM humanresources.employeedepartmenthistory WHERE businessentityid=e.businessentityid ORDER BY enddate DESC NULLS LAST LIMIT 1) edh_last ON true LEFT JOIN humanresources.employee mgr ON mgr.organizationlevel = e.organizationlevel - 1 AND e.organizationnode::text LIKE mgr.organizationnode::text || '%' LEFT JOIN person.businessentityaddress bea ON e.businessentityid=bea.businessentityid LEFT JOIN person.address addr ON bea.addressid=addr.addressid LEFT JOIN person.stateprovince addr_sp ON addr.stateprovinceid=addr_sp.stateprovinceid
     target:
       connection: target_snowflake
       query: |
         SELECT de.EmployeeNationalIDAlternateKey AS "EmployeeNationalIDAlternateKey", pde.EmployeeNationalIDAlternateKey AS "ParentEmployeeNationalIDAlternateKey", dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey", de.FirstName AS "FirstName", de.LastName AS "LastName", de.MiddleName AS "MiddleName", de.NameStyle AS "NameStyle", de.Title AS "Title", de.HireDate AS "HireDate", de.BirthDate AS "BirthDate", de.LoginID AS "LoginID", de.EmailAddress AS "EmailAddress", de.Phone AS "Phone", de.MaritalStatus AS "MaritalStatus", de.EmergencyContactName AS "EmergencyContactName", de.EmergencyContactPhone AS "EmergencyContactPhone", de.SalariedFlag AS "SalariedFlag", de.Gender AS "Gender", de.PayFrequency AS "PayFrequency", de.BaseRate AS "BaseRate", de.VacationHours AS "VacationHours", de.SickLeaveHours AS "SickLeaveHours", de.CurrentFlag AS "CurrentFlag", de.SalesPersonFlag AS "SalesPersonFlag", de.DepartmentName AS "DepartmentName", de.StartDate AS "StartDate", de.EndDate AS "EndDate", de.Status AS "Status", de.EmployeePhoto AS "EmployeePhoto"
-        FROM public.dimemployee de LEFT JOIN public.dimemployee pde ON de.ParentEmployeeKey=pde.EmployeeKey LEFT JOIN public.dimsalesterritory dst ON de.SalesTerritoryKey=dst.SalesTerritoryKey
+        FROM public.dimemployee de LEFT JOIN public.dimemployee pde ON de.ParentEmployeeKey=pde.EmployeeKey LEFT JOIN public.dimsalesterritory dst ON de.SalesTerritoryKey=dst.SalesTerritoryKey WHERE de.Status = 'Current'
     primary_key: [EmployeeNationalIDAlternateKey]
     compare_columns: [ParentEmployeeNationalIDAlternateKey, SalesTerritoryAlternateKey, FirstName, LastName, MiddleName, NameStyle, Title, HireDate, BirthDate, LoginID, EmailAddress, Phone, MaritalStatus, EmergencyContactName, EmergencyContactPhone, SalariedFlag, Gender, PayFrequency, BaseRate, VacationHours, SickLeaveHours, CurrentFlag, SalesPersonFlag, DepartmentName, StartDate, EndDate, Status, EmployeePhoto]
     validations:
@@ -934,15 +937,43 @@ datasets:
     source:
       connection: source_postgres
       query: |
-        SELECT s.businessentityid::text AS "ResellerAlternateKey", CONCAT_WS('|',a.city,sp.stateprovincecode,cr.countryregioncode,a.postalcode) AS "GeographyNaturalKey", pp.phonenumber AS "Phone", NULL::text AS "BusinessType", TRIM(s.name) AS "ResellerName", NULL::integer AS "NumberEmployees", NULL::text AS "OrderFrequency", NULL::integer AS "OrderMonth", EXTRACT(YEAR FROM MIN(soh.orderdate))::integer AS "FirstOrderYear", EXTRACT(YEAR FROM MAX(soh.orderdate))::integer AS "LastOrderYear", NULL::text AS "ProductLine", a.addressline1 AS "AddressLine1", a.addressline2 AS "AddressLine2", NULL::numeric AS "AnnualSales", NULL::text AS "BankName", NULL::integer AS "MinPaymentType", NULL::numeric AS "MinPaymentAmount", NULL::numeric AS "AnnualRevenue", NULL::integer AS "YearOpened"
-        FROM sales.store s LEFT JOIN person.businessentityaddress bea ON s.businessentityid=bea.businessentityid LEFT JOIN person.address a ON bea.addressid=a.addressid LEFT JOIN person.stateprovince sp ON a.stateprovinceid=sp.stateprovinceid LEFT JOIN person.countryregion cr ON sp.countryregioncode=cr.countryregioncode LEFT JOIN person.personphone pp ON s.businessentityid=pp.businessentityid LEFT JOIN sales.customer c ON s.businessentityid=c.storeid LEFT JOIN sales.salesorderheader soh ON c.customerid=soh.customerid GROUP BY s.businessentityid,a.city,sp.stateprovincecode,cr.countryregioncode,a.postalcode,pp.phonenumber,s.name,a.addressline1,a.addressline2
+        SELECT
+            'AW' || LPAD(s.businessentityid::text, 8, '0') AS "ResellerAlternateKey",
+            CONCAT_WS('|', COALESCE(a.city,''), COALESCE(sp.stateprovincecode,''), COALESCE(cr.countryregioncode,''), COALESCE(a.postalcode,'')) AS "GeographyNaturalKey",
+            MAX(pp.phonenumber) AS "Phone",
+            (xpath('//*[local-name()="BusinessType"]/text()', s.demographics::xml))[1]::text AS "BusinessType",
+            TRIM(s.name) AS "ResellerName",
+            ((xpath('//*[local-name()="NumberEmployees"]/text()', s.demographics::xml))[1]::text)::integer AS "NumberEmployees",
+            NULL::text AS "OrderFrequency",
+            NULL::integer AS "OrderMonth",
+            EXTRACT(YEAR FROM MIN(soh.orderdate))::integer AS "FirstOrderYear",
+            EXTRACT(YEAR FROM MAX(soh.orderdate))::integer AS "LastOrderYear",
+            (xpath('//*[local-name()="Specialty"]/text()', s.demographics::xml))[1]::text AS "ProductLine",
+            MAX(a.addressline1) AS "AddressLine1",
+            MAX(a.addressline2) AS "AddressLine2",
+            ((xpath('//*[local-name()="AnnualSales"]/text()', s.demographics::xml))[1]::text)::numeric AS "AnnualSales",
+            (xpath('//*[local-name()="BankName"]/text()', s.demographics::xml))[1]::text AS "BankName",
+            NULL::integer AS "MinPaymentType",
+            NULL::numeric AS "MinPaymentAmount",
+            ((xpath('//*[local-name()="AnnualRevenue"]/text()', s.demographics::xml))[1]::text)::numeric AS "AnnualRevenue",
+            ((xpath('//*[local-name()="YearOpened"]/text()', s.demographics::xml))[1]::text)::integer AS "YearOpened"
+        FROM sales.store s
+        LEFT JOIN person.businessentityaddress bea ON s.businessentityid=bea.businessentityid
+        LEFT JOIN person.address a ON bea.addressid=a.addressid
+        LEFT JOIN person.stateprovince sp ON a.stateprovinceid=sp.stateprovinceid
+        LEFT JOIN person.countryregion cr ON sp.countryregioncode=cr.countryregioncode
+        LEFT JOIN person.person per ON s.businessentityid=per.businessentityid
+        LEFT JOIN person.personphone pp ON per.businessentityid=pp.businessentityid
+        LEFT JOIN sales.customer c ON s.businessentityid=c.storeid
+        LEFT JOIN sales.salesorderheader soh ON c.customerid=soh.customerid
+        GROUP BY s.businessentityid, s.name, s.demographics, a.city, sp.stateprovincecode, cr.countryregioncode, a.postalcode
     target:
       connection: target_snowflake
       query: |
         SELECT dr.ResellerAlternateKey AS "ResellerAlternateKey", CONCAT_WS('|',dg.City,dg.StateProvinceCode,dg.CountryRegionCode,dg.PostalCode) AS "GeographyNaturalKey", dr.Phone AS "Phone", dr.BusinessType AS "BusinessType", dr.ResellerName AS "ResellerName", dr.NumberEmployees AS "NumberEmployees", dr.OrderFrequency AS "OrderFrequency", dr.OrderMonth AS "OrderMonth", dr.FirstOrderYear AS "FirstOrderYear", dr.LastOrderYear AS "LastOrderYear", dr.ProductLine AS "ProductLine", dr.AddressLine1 AS "AddressLine1", dr.AddressLine2 AS "AddressLine2", dr.AnnualSales AS "AnnualSales", dr.BankName AS "BankName", dr.MinPaymentType AS "MinPaymentType", dr.MinPaymentAmount AS "MinPaymentAmount", dr.AnnualRevenue AS "AnnualRevenue", dr.YearOpened AS "YearOpened"
         FROM public.dimreseller dr LEFT JOIN public.dimgeography dg ON dr.GeographyKey=dg.GeographyKey
-    primary_key: [ResellerAlternateKey]
-    compare_columns: [GeographyNaturalKey, Phone, BusinessType, ResellerName, NumberEmployees, OrderFrequency, OrderMonth, FirstOrderYear, LastOrderYear, ProductLine, AddressLine1, AddressLine2, AnnualSales, BankName, MinPaymentType, MinPaymentAmount, AnnualRevenue, YearOpened]
+    primary_key: [ResellerName]
+    compare_columns: [GeographyNaturalKey, Phone, BusinessType, NumberEmployees, OrderFrequency, OrderMonth, FirstOrderYear, LastOrderYear, ProductLine, AddressLine1, AddressLine2, AnnualSales, BankName, MinPaymentType, MinPaymentAmount, AnnualRevenue, YearOpened]
     validations:
       aggregate:
         metrics:
@@ -1007,12 +1038,13 @@ datasets:
     source:
       connection: source_postgres
       query: |
-        SELECT p.productnumber AS "ProductAlternateKey", TO_CHAR(th.transactiondate::date,'YYYYMMDD')::integer AS "DateKey", TO_CHAR(th.transactiondate::date,'YYYY-MM-DD') AS "MovementDate", th.actualcost AS "UnitCost", CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity ELSE 0 END AS "UnitsIn", CASE WHEN th.transactiontype='S' THEN th.quantity ELSE 0 END AS "UnitsOut", SUM(CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity WHEN th.transactiontype='S' THEN -th.quantity ELSE 0 END) OVER (PARTITION BY th.productid ORDER BY th.transactiondate,th.transactionid) AS "UnitsBalance"
+        SELECT p.productnumber AS "ProductAlternateKey", TO_CHAR(th.transactiondate::date,'YYYYMMDD')::integer AS "DateKey", TO_CHAR(th.transactiondate::date,'YYYY-MM-DD') AS "MovementDate", SUM(th.actualcost) AS "UnitCost", SUM(CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity ELSE 0 END) AS "UnitsIn", SUM(CASE WHEN th.transactiontype='S' THEN th.quantity ELSE 0 END) AS "UnitsOut", SUM(CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity WHEN th.transactiontype='S' THEN -th.quantity ELSE 0 END) AS "UnitsBalance"
         FROM production.transactionhistory th JOIN production.product p ON th.productid=p.productid
+        GROUP BY p.productnumber, th.transactiondate::date
     target:
       connection: target_snowflake
       query: |
-        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fpi.DateKey AS "DateKey", fpi.MovementDate AS "MovementDate", fpi.UnitCost AS "UnitCost", fpi.UnitsIn AS "UnitsIn", fpi.UnitsOut AS "UnitsOut", fpi.UnitsBalance AS "UnitsBalance" FROM public.factproductinventory fpi LEFT JOIN public.dimproduct dp ON fpi.ProductKey=dp.ProductKey
+        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fpi.DateKey AS "DateKey", TO_VARCHAR(fpi.MovementDate, 'YYYY-MM-DD') AS "MovementDate", fpi.UnitCost AS "UnitCost", fpi.UnitsIn AS "UnitsIn", fpi.UnitsOut AS "UnitsOut", fpi.UnitsBalance AS "UnitsBalance" FROM public.factproductinventory fpi LEFT JOIN public.dimproduct dp ON fpi.ProductKey=dp.ProductKey WHERE dp.Status = 'Current' AND dp.EndDate IS NULL
     primary_key: [ProductAlternateKey, DateKey, MovementDate]
     compare_columns: [UnitCost, UnitsIn, UnitsOut, UnitsBalance]
     validations:
@@ -1068,7 +1100,7 @@ datasets:
       connection: source_postgres
       query: |
         WITH fact_source AS (
-          SELECT soh.salesorderid, sod.salesorderdetailid AS sales_order_line_number,
+          SELECT soh.salesorderid, ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number,
                  soh.salesordernumber, soh.revisionnumber, soh.orderdate AS order_date,
                  soh.duedate AS due_date, soh.shipdate AS ship_date, soh.customerid,
                  soh.salespersonid, soh.territoryid, cr.tocurrencycode, sod.productid,
@@ -1083,7 +1115,7 @@ datasets:
         SELECT fs.salesordernumber AS "SalesOrderNumber",
                fs.sales_order_line_number AS "SalesOrderLineNumber",
                p.productnumber AS "ProductAlternateKey",
-               s.businessentityid::text AS "ResellerAlternateKey",
+               'AW' || LPAD(s.businessentityid::text, 8, '0') AS "ResellerAlternateKey",
                e.nationalidnumber AS "EmployeeNationalIDAlternateKey",
                fs.specialofferid AS "PromotionAlternateKey",
                COALESCE(fs.tocurrencycode, 'USD') AS "CurrencyAlternateKey",
@@ -1153,11 +1185,11 @@ datasets:
     source:
       connection: source_postgres
       query: |
-        SELECT p.productnumber AS "ProductAlternateKey", c.name AS "CultureName", pd.description AS "ProductDescription" FROM production.product p JOIN production.productmodelproductdescriptionculture pmpdc ON p.productmodelid=pmpdc.productmodelid JOIN production.productdescription pd ON pmpdc.productdescriptionid=pd.productdescriptionid JOIN production.culture c ON pmpdc.cultureid=c.cultureid
+        SELECT p.productnumber AS "ProductAlternateKey", TRIM(c.cultureid) AS "CultureName", pd.description AS "ProductDescription" FROM production.product p JOIN production.productmodelproductdescriptionculture pmpdc ON p.productmodelid=pmpdc.productmodelid JOIN production.productdescription pd ON pmpdc.productdescriptionid=pd.productdescriptionid JOIN production.culture c ON pmpdc.cultureid=c.cultureid
     target:
       connection: target_snowflake
       query: |
-        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fa.CultureName AS "CultureName", fa.ProductDescription AS "ProductDescription" FROM public.factadditionalinternationalproductdescription fa LEFT JOIN public.dimproduct dp ON fa.ProductKey=dp.ProductKey
+        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fa.CultureName AS "CultureName", fa.ProductDescription AS "ProductDescription" FROM public.factadditionalinternationalproductdescription fa LEFT JOIN public.dimproduct dp ON fa.ProductKey=dp.ProductKey WHERE dp.Status = 'Current' AND dp.EndDate IS NULL
     primary_key: [ProductAlternateKey, CultureName]
     compare_columns: [ProductDescription]
     validations:

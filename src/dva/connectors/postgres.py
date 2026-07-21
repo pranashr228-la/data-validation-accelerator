@@ -34,9 +34,13 @@ class PostgresConnector(Connector):
 
     def fetch_arrow(self, sql: str) -> pa.Table:
         assert self._conn is not None, "Connector must be connected before use"
-        with self._conn.cursor() as cur:
-            cur.execute(sql)
-            columns = [desc.name for desc in cur.description or []]
-            rows = cur.fetchall()
-        arrays = [pa.array([row[i] for row in rows]) for i in range(len(columns))]
-        return pa.Table.from_arrays(arrays, names=columns) if columns else pa.table({})
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute(sql)
+                columns = [desc.name for desc in cur.description or []]
+                rows = cur.fetchall()
+            arrays = [pa.array([row[i] for row in rows]) for i in range(len(columns))]
+            return pa.Table.from_arrays(arrays, names=columns) if columns else pa.table({})
+        except Exception:
+            self._conn.rollback()
+            raise

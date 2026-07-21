@@ -10,3 +10,6 @@ validation_runs/
 .coverage
 htmlcov/
 sample_data/*.duckdb
+
+# graphify-axet
+.graphify/

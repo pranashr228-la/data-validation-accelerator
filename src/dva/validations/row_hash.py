@@ -71,7 +71,7 @@ def run_row_hash(ctx: DatasetContext) -> None:
     source_extract = _build_extract(source_rows, pk, ctx.dataset.compare_columns, hash_defaults)
     target_extract = _build_extract(target_rows, pk, ctx.dataset.compare_columns, hash_defaults)
 
-    tmp_dir = ctx.run.run_dir / "_hash_extracts"
+    tmp_dir = ctx.run.run_dir.resolve() / "_hash_extracts"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     source_path = tmp_dir / f"{ctx.dataset.name}_source.parquet"
     target_path = tmp_dir / f"{ctx.dataset.name}_target.parquet"
