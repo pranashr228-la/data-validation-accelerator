@@ -1,7 +1,8 @@
 project:
   name: adventureworks_internet_sales_validation
   output_path: ./validation_runs/adventureworks_internet_sales
-
+execution:
+  write_generated_sql: false
 connections:
   source_postgres:
     type: postgres
@@ -32,8 +33,7 @@ defaults:
   validations:
     row_hash:
       max_mismatch_samples: 100
-      write_full_mismatches: false
-
+      write_full_mismatches: true
 datasets:
   - name: dim_date_validation
     mapping_mode: query_to_query
@@ -103,41 +103,58 @@ datasets:
       connection: source_postgres
       query: |
         SELECT
-          pc.productcategoryid AS "ProductCategoryAlternateKey",
-          COALESCE(TRIM(pc.name), 'NA') AS "EnglishProductCategoryName",
-          NULL AS "SpanishProductCategoryName",
-          NULL AS "FrenchProductCategoryName"
+          CAST(pc.productcategoryid AS BIGINT) AS "ProductCategoryAlternateKey",
+          TRIM(pc.name) AS "EnglishProductCategoryName",
+          CAST(NULL AS text) AS "SpanishProductCategoryName",
+          CAST(NULL AS text) AS "FrenchProductCategoryName"
         FROM production.productcategory pc
     target:
       connection: target_snowflake
       query: |
         SELECT
-          ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
-          EnglishProductCategoryName AS "EnglishProductCategoryName",
+          CAST(ProductCategoryAlternateKey AS BIGINT) AS "ProductCategoryAlternateKey",
+          TRIM(EnglishProductCategoryName) AS "EnglishProductCategoryName",
           SpanishProductCategoryName AS "SpanishProductCategoryName",
           FrenchProductCategoryName AS "FrenchProductCategoryName"
         FROM public.dimproductcategory
     primary_key: [ProductCategoryAlternateKey]
     compare_columns: [EnglishProductCategoryName, SpanishProductCategoryName, FrenchProductCategoryName]
+    validations:
+      aggregate:
+        metrics:
+          - column: EnglishProductCategoryName
+            checks: [count_distinct, null_count]
+          - column: SpanishProductCategoryName
+            checks: [count_distinct, null_count]
+          - column: FrenchProductCategoryName
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: EnglishProductCategoryName
+            checks: [distinct_count, null_rate]
+          - column: SpanishProductCategoryName
+            checks: [distinct_count, null_rate]
+          - column: FrenchProductCategoryName
+            checks: [distinct_count, null_rate]
   - name: dim_product_subcategory_validation
     mapping_mode: query_to_query
     source:
       connection: source_postgres
       query: |
         SELECT
-          ps.productsubcategoryid AS "ProductSubcategoryAlternateKey",
-          ps.productcategoryid AS "ProductCategoryAlternateKey",
-          COALESCE(TRIM(ps.name), 'NA') AS "EnglishProductSubcategoryName",
-          NULL AS "SpanishProductSubcategoryName",
-          NULL AS "FrenchProductSubcategoryName"
+          CAST(ps.productsubcategoryid AS BIGINT) AS "ProductSubcategoryAlternateKey",
+          CAST(ps.productcategoryid AS BIGINT) AS "ProductCategoryAlternateKey",
+          TRIM(ps.name) AS "EnglishProductSubcategoryName",
+          CAST(NULL AS text) AS "SpanishProductSubcategoryName",
+          CAST(NULL AS text) AS "FrenchProductSubcategoryName"
         FROM production.productsubcategory ps
     target:
       connection: target_snowflake
       query: |
         SELECT
-          dps.ProductSubcategoryAlternateKey AS "ProductSubcategoryAlternateKey",
-          dpc.ProductCategoryAlternateKey AS "ProductCategoryAlternateKey",
-          dps.EnglishProductSubcategoryName AS "EnglishProductSubcategoryName",
+          CAST(dps.ProductSubcategoryAlternateKey AS BIGINT) AS "ProductSubcategoryAlternateKey",
+          CAST(dpc.ProductCategoryAlternateKey AS BIGINT) AS "ProductCategoryAlternateKey",
+          TRIM(dps.EnglishProductSubcategoryName) AS "EnglishProductSubcategoryName",
           dps.SpanishProductSubcategoryName AS "SpanishProductSubcategoryName",
           dps.FrenchProductSubcategoryName AS "FrenchProductSubcategoryName"
         FROM public.dimproductsubcategory dps
@@ -145,6 +162,19 @@ datasets:
           ON dps.ProductCategoryKey = dpc.ProductCategoryKey
     primary_key: [ProductSubcategoryAlternateKey]
     compare_columns: [ProductCategoryAlternateKey, EnglishProductSubcategoryName, SpanishProductSubcategoryName, FrenchProductSubcategoryName]
+    validations:
+      aggregate:
+        metrics:
+          - column: ProductCategoryAlternateKey
+            checks: [count_distinct, null_count]
+          - column: EnglishProductSubcategoryName
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: EnglishProductSubcategoryName
+            checks: [distinct_count, null_rate]
+          - column: ProductCategoryAlternateKey
+            checks: [distinct_count, null_rate]
   - name: dim_product_validation
     mapping_mode: query_to_query
     source:
@@ -154,6 +184,7 @@ datasets:
           SELECT
             pmpdc.productmodelid,
             MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('en', 'en-us') THEN pd.description END) AS english_description,
+            MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('es', 'es-es') THEN pd.description END) AS spanish_description,
             MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('fr', 'fr-fr') THEN pd.description END) AS french_description,
             MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('zh-cht', 'zh-cn', 'zh') THEN pd.description END) AS chinese_description,
             MAX(CASE WHEN LOWER(pmpdc.cultureid) IN ('ar') THEN pd.description END) AS arabic_description,
@@ -182,8 +213,8 @@ datasets:
           p.weightunitmeasurecode AS "WeightUnitMeasureCode",
           p.sizeunitmeasurecode AS "SizeUnitMeasureCode",
           TRIM(p.name) AS "EnglishProductName",
-          TRIM(p.name) AS "SpanishProductName",
-          TRIM(p.name) AS "FrenchProductName",
+          product_descriptions.spanish_description AS "SpanishProductName",
+          product_descriptions.french_description AS "FrenchProductName",
           p.standardcost AS "StandardCost",
           p.finishedgoodsflag AS "FinishedGoodsFlag",
           COALESCE(p.color, 'NA') AS "Color",
@@ -290,7 +321,7 @@ datasets:
       connection: source_postgres
       query: |
         SELECT
-          sr.salesreasonid AS "SalesReasonAlternateKey",
+          CAST(sr.salesreasonid AS BIGINT) AS "SalesReasonAlternateKey",
           TRIM(sr.name) AS "SalesReasonName",
           TRIM(sr.reasontype) AS "SalesReasonReasonType"
         FROM sales.salesreason sr
@@ -298,12 +329,25 @@ datasets:
       connection: target_snowflake
       query: |
         SELECT
-          SalesReasonAlternateKey AS "SalesReasonAlternateKey",
+          CAST(SalesReasonAlternateKey AS BIGINT) AS "SalesReasonAlternateKey",
           SalesReasonName AS "SalesReasonName",
           SalesReasonReasonType AS "SalesReasonReasonType"
         FROM public.dimsalesreason
     primary_key: [SalesReasonAlternateKey]
     compare_columns: [SalesReasonName, SalesReasonReasonType]
+    validations:
+      aggregate:
+        metrics:
+          - column: SalesReasonName
+            checks: [count_distinct, null_count]
+          - column: SalesReasonReasonType
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: SalesReasonName
+            checks: [distinct_count, null_rate]
+          - column: SalesReasonReasonType
+            checks: [distinct_count, null_rate]
   - name: dim_currency_validation
     mapping_mode: query_to_query
     source:
@@ -322,23 +366,32 @@ datasets:
         FROM public.dimcurrency
     primary_key: [CurrencyAlternateKey]
     compare_columns: [CurrencyName]
+    validations:
+      aggregate:
+        metrics:
+          - column: CurrencyName
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: CurrencyName
+            checks: [distinct_count, null_rate]
   - name: dim_promotion_validation
     mapping_mode: query_to_query
     source:
       connection: source_postgres
       query: |
         SELECT
-          so.specialofferid AS "PromotionAlternateKey",
+          CAST(so.specialofferid AS BIGINT) AS "PromotionAlternateKey",
           TRIM(so.description) AS "EnglishPromotionName",
-          NULL AS "SpanishPromotionName",
-          NULL AS "FrenchPromotionName",
-          so.discountpct AS "DiscountPct",
+          TRIM(so.description) AS "SpanishPromotionName",
+          TRIM(so.description) AS "FrenchPromotionName",
+          CAST(so.discountpct AS FLOAT) AS "DiscountPct",
           TRIM(so.type) AS "EnglishPromotionType",
-          NULL AS "SpanishPromotionType",
-          NULL AS "FrenchPromotionType",
+          TRIM(so.type) AS "SpanishPromotionType",
+          TRIM(so.type) AS "FrenchPromotionType",
           TRIM(so.category) AS "EnglishPromotionCategory",
-          NULL AS "SpanishPromotionCategory",
-          NULL AS "FrenchPromotionCategory",
+          TRIM(so.category) AS "SpanishPromotionCategory",
+          TRIM(so.category) AS "FrenchPromotionCategory",
           so.startdate AS "StartDate",
           so.enddate AS "EndDate",
           so.minqty AS "MinQty",
@@ -378,7 +431,7 @@ datasets:
       connection: source_postgres
       query: |
         SELECT
-          st.territoryid AS "SalesTerritoryAlternateKey",
+          CAST(st.territoryid AS BIGINT) AS "SalesTerritoryAlternateKey",
           TRIM(st.name) AS "SalesTerritoryRegion",
           COALESCE(TRIM(cr.name), 'NA') AS "SalesTerritoryCountry",
           TRIM(st."group") AS "SalesTerritoryGroup",
@@ -390,7 +443,7 @@ datasets:
       connection: target_snowflake
       query: |
         SELECT
-          SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey",
+          CAST(SalesTerritoryAlternateKey AS BIGINT) AS "SalesTerritoryAlternateKey",
           SalesTerritoryRegion AS "SalesTerritoryRegion",
           SalesTerritoryCountry AS "SalesTerritoryCountry",
           SalesTerritoryGroup AS "SalesTerritoryGroup",
@@ -398,6 +451,23 @@ datasets:
         FROM public.dimsalesterritory
     primary_key: [SalesTerritoryAlternateKey]
     compare_columns: [SalesTerritoryRegion, SalesTerritoryCountry, SalesTerritoryGroup, SalesTerritoryImage]
+    validations:
+      aggregate:
+        metrics:
+          - column: SalesTerritoryRegion
+            checks: [count_distinct, null_count]
+          - column: SalesTerritoryCountry
+            checks: [count_distinct, null_count]
+          - column: SalesTerritoryGroup
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: SalesTerritoryRegion
+            checks: [distinct_count, null_rate]
+          - column: SalesTerritoryCountry
+            checks: [distinct_count, null_rate]
+          - column: SalesTerritoryGroup
+            checks: [distinct_count, null_rate]
   - name: dim_geography_validation
     mapping_mode: query_to_query
     source:
@@ -410,8 +480,8 @@ datasets:
           TRIM(sp.name) AS "StateProvinceName",
           TRIM(cr.countryregioncode) AS "CountryRegionCode",
           TRIM(cr.name) AS "EnglishCountryRegionName",
-          NULL AS "SpanishCountryRegionName",
-          NULL AS "FrenchCountryRegionName",
+          TRIM(cr.name) AS "SpanishCountryRegionName",
+          TRIM(cr.name) AS "FrenchCountryRegionName",
           TRIM(a.postalcode) AS "PostalCode",
           sp.territoryid AS "SalesTerritoryAlternateKey",
           NULL AS "IpAddressLocator"
@@ -440,6 +510,23 @@ datasets:
           ON dg.SalesTerritoryKey = dst.SalesTerritoryKey
     primary_key: [GeographyNaturalKey]
     compare_columns: [City, StateProvinceCode, StateProvinceName, CountryRegionCode, EnglishCountryRegionName, SpanishCountryRegionName, FrenchCountryRegionName, PostalCode, SalesTerritoryAlternateKey, IpAddressLocator]
+    validations:
+      aggregate:
+        metrics:
+          - column: City
+            checks: [count_distinct, null_count]
+          - column: CountryRegionCode
+            checks: [count_distinct, null_count]
+          - column: PostalCode
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: City
+            checks: [distinct_count, null_rate]
+          - column: CountryRegionCode
+            checks: [distinct_count, null_rate]
+          - column: PostalCode
+            checks: [distinct_count, null_rate]
   - name: dim_customer_validation
     mapping_mode: query_to_query
     source:
@@ -570,11 +657,15 @@ datasets:
         group_by: [EnglishEducation]
         metrics:
           - column: YearlyIncome
-            checks: [sum, avg, count]
+            checks: [count_distinct, null_count]
+          - column: EnglishEducation
+            checks: [count_distinct, null_count]
       statistical:
         metrics:
           - column: YearlyIncome
-            checks: [mean, stddev, p50]
+            checks: [distinct_count, null_rate]
+          - column: EnglishEducation
+            checks: [distinct_count, null_rate]
   - name: fact_internet_sales_validation
     mapping_mode: query_to_query
     source:
@@ -584,12 +675,12 @@ datasets:
           SELECT
             soh.salesorderid,
             sod.salesorderdetailid,
-            ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number,
+            sod.salesorderdetailid AS sales_order_line_number,
             soh.salesordernumber,
             soh.revisionnumber,
-            soh.orderdate::date AS order_date,
-            soh.duedate::date AS due_date,
-            soh.shipdate::date AS ship_date,
+            soh.orderdate AS order_date,
+            soh.duedate AS due_date,
+            soh.shipdate AS ship_date,
             soh.customerid,
             soh.territoryid,
             cr.tocurrencycode,
@@ -619,20 +710,20 @@ datasets:
           fs.specialofferid AS "PromotionAlternateKey",
           COALESCE(fs.tocurrencycode, 'USD') AS "CurrencyAlternateKey",
           fs.territoryid AS "SalesTerritoryAlternateKey",
-          TO_CHAR(fs.order_date, 'YYYYMMDD')::integer AS "OrderDateKey",
-          TO_CHAR(fs.due_date, 'YYYYMMDD')::integer AS "DueDateKey",
-          TO_CHAR(fs.ship_date, 'YYYYMMDD')::integer AS "ShipDateKey",
+          TO_CHAR(fs.order_date::date, 'YYYYMMDD')::integer AS "OrderDateKey",
+          TO_CHAR(fs.due_date::date, 'YYYYMMDD')::integer AS "DueDateKey",
+          TO_CHAR(fs.ship_date::date, 'YYYYMMDD')::integer AS "ShipDateKey",
           fs.revisionnumber AS "RevisionNumber",
           fs.orderqty AS "OrderQuantity",
           fs.unitprice AS "UnitPrice",
-          fs.orderqty * fs.unitprice AS "ExtendedAmount",
+          fs.linetotal AS "ExtendedAmount",
           fs.unitpricediscount AS "UnitPriceDiscountPct",
           fs.orderqty * fs.unitprice * fs.unitpricediscount AS "DiscountAmount",
           p.standardcost AS "ProductStandardCost",
           fs.orderqty * p.standardcost AS "TotalProductCost",
-          fs.linetotal AS "SalesAmount",
-          CASE WHEN fs.subtotal = 0 THEN 0 ELSE fs.taxamt * (fs.linetotal / fs.subtotal) END AS "TaxAmt",
-          CASE WHEN fs.subtotal = 0 THEN 0 ELSE fs.freight * (fs.linetotal / fs.subtotal) END AS "Freight",
+          fs.orderqty * fs.unitprice AS "SalesAmount",
+          fs.taxamt AS "TaxAmt",
+          fs.freight AS "Freight",
           fs.carriertrackingnumber AS "CarrierTrackingNumber",
           fs.purchaseordernumber AS "CustomerPONumber",
           fs.order_date AS "OrderDate",
@@ -714,7 +805,7 @@ datasets:
             soh.salesorderid,
             soh.salesordernumber,
             sod.salesorderdetailid,
-            ROW_NUMBER() OVER (PARTITION BY soh.salesorderid ORDER BY sod.salesorderdetailid) AS sales_order_line_number
+            sod.salesorderdetailid AS sales_order_line_number
           FROM sales.salesorderheader soh
           JOIN sales.salesorderdetail sod
             ON soh.salesorderid = sod.salesorderid
@@ -742,3 +833,404 @@ datasets:
           ON fisr.SalesReasonKey = dsr.SalesReasonKey
     primary_key: [SalesOrderNumber, SalesOrderLineNumber, SalesReasonAlternateKey]
     compare_columns: []
+    validations:
+      aggregate:
+        enabled: false
+      statistical:
+        enabled: false
+  - name: dim_department_group_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT NULL::BIGINT AS "ParentDepartmentGroupKey", TRIM(v.department_group_name) AS "DepartmentGroupName"
+        FROM (VALUES ('Corporate'), ('Executive General and Administration'), ('Inventory Management'), ('Manufacturing'), ('Quality Assurance'), ('Research and Development'), ('Sales and Marketing')) v(department_group_name)
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT ParentDepartmentGroupKey AS "ParentDepartmentGroupKey", TRIM(DepartmentGroupName) AS "DepartmentGroupName"
+        FROM public.dimdepartmentgroup
+    primary_key: [DepartmentGroupName]
+    compare_columns: [ParentDepartmentGroupKey]
+    validations:
+      aggregate:
+        metrics:
+          - column: DepartmentGroupName
+            checks: [count_distinct, null_count]
+  - name: dim_account_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT * FROM (VALUES (NULL,1,NULL,'Balance Sheet',NULL,'~',NULL,'Currency',NULL),(1,10,1,'Assets','Assets','+',NULL,'Currency',NULL),(2,110,10,'Current Assets','Assets','+',NULL,'Currency',NULL),(3,1110,110,'Cash','Assets','+',NULL,'Currency',NULL),(3,1120,110,'Receivables','Assets','+',NULL,'Currency',NULL),(5,1130,1120,'Trade Receivables','Assets','+',NULL,'Currency',NULL),(5,1140,1120,'Other Receivables','Assets','+',NULL,'Currency',NULL),(3,1150,110,'Allowance for Bad Debt','Assets','+',NULL,'Currency',NULL),(3,1160,110,'Inventory','Assets','+',NULL,'Currency',NULL),(9,1162,1160,'Raw Materials','Assets','+',NULL,'Currency',NULL)) AS src("ParentAccountKey","AccountCodeAlternateKey","ParentAccountCodeAlternateKey","AccountDescription","AccountType","Operator","CustomMembers","ValueType","CustomMemberOptions")
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT ParentAccountKey AS "ParentAccountKey", AccountCodeAlternateKey AS "AccountCodeAlternateKey", ParentAccountCodeAlternateKey AS "ParentAccountCodeAlternateKey", TRIM(AccountDescription) AS "AccountDescription", TRIM(AccountType) AS "AccountType", Operator AS "Operator", CustomMembers AS "CustomMembers", TRIM(ValueType) AS "ValueType", CustomMemberOptions AS "CustomMemberOptions"
+        FROM public.dimaccount
+    primary_key: [AccountCodeAlternateKey]
+    compare_columns: [ParentAccountKey, ParentAccountCodeAlternateKey, AccountDescription, AccountType, Operator, CustomMembers, ValueType, CustomMemberOptions]
+    validations:
+      aggregate:
+        metrics:
+          - column: AccountCodeAlternateKey
+            checks: [count_distinct, null_count]
+          - column: AccountDescription
+            checks: [count_distinct, null_count]
+          - column: AccountType
+            checks: [count_distinct, null_count]
+      statistical:
+        metrics:
+          - column: AccountDescription
+            checks: [distinct_count, null_rate]
+          - column: AccountType
+            checks: [distinct_count, null_rate]
+  - name: dim_employee_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT TRIM(e.nationalidnumber) AS "EmployeeNationalIDAlternateKey", TRIM(mgr.nationalidnumber) AS "ParentEmployeeNationalIDAlternateKey", sp.territoryid AS "SalesTerritoryAlternateKey", TRIM(p.firstname) AS "FirstName", TRIM(p.lastname) AS "LastName", TRIM(p.middlename) AS "MiddleName", p.namestyle AS "NameStyle", TRIM(e.jobtitle) AS "Title", e.hiredate::date AS "HireDate", e.birthdate::date AS "BirthDate", TRIM(e.loginid) AS "LoginID", TRIM(ea.emailaddress) AS "EmailAddress", TRIM(pp.phonenumber) AS "Phone", TRIM(e.maritalstatus) AS "MaritalStatus", NULL::text AS "EmergencyContactName", NULL::text AS "EmergencyContactPhone", e.salariedflag AS "SalariedFlag", TRIM(e.gender) AS "Gender", eph.payfrequency AS "PayFrequency", eph.rate AS "BaseRate", e.vacationhours AS "VacationHours", e.sickleavehours AS "SickLeaveHours", e.currentflag AS "CurrentFlag", CASE WHEN sp.businessentityid IS NULL THEN 0 ELSE 1 END AS "SalesPersonFlag", TRIM(d.name) AS "DepartmentName", e.hiredate::date AS "StartDate", CASE WHEN e.currentflag THEN NULL ELSE e.modifieddate::date END AS "EndDate", CASE WHEN e.currentflag THEN 'Current' ELSE 'Inactive' END AS "Status", NULL::bytea AS "EmployeePhoto"
+        FROM humanresources.employee e LEFT JOIN person.person p ON e.businessentityid=p.businessentityid LEFT JOIN person.emailaddress ea ON e.businessentityid=ea.businessentityid LEFT JOIN person.personphone pp ON e.businessentityid=pp.businessentityid LEFT JOIN sales.salesperson sp ON e.businessentityid=sp.businessentityid LEFT JOIN humanresources.employeepayhistory eph ON e.businessentityid=eph.businessentityid LEFT JOIN humanresources.employeedepartmenthistory edh ON e.businessentityid=edh.businessentityid AND edh.enddate IS NULL LEFT JOIN humanresources.department d ON edh.departmentid=d.departmentid LEFT JOIN humanresources.employee mgr ON e.organizationnode::text LIKE mgr.organizationnode::text || '%' AND (LENGTH(e.organizationnode::text) - LENGTH(REPLACE(e.organizationnode::text, '/', ''))) = (LENGTH(mgr.organizationnode::text) - LENGTH(REPLACE(mgr.organizationnode::text, '/', '')))+1
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT de.EmployeeNationalIDAlternateKey AS "EmployeeNationalIDAlternateKey", pde.EmployeeNationalIDAlternateKey AS "ParentEmployeeNationalIDAlternateKey", dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey", de.FirstName AS "FirstName", de.LastName AS "LastName", de.MiddleName AS "MiddleName", de.NameStyle AS "NameStyle", de.Title AS "Title", de.HireDate AS "HireDate", de.BirthDate AS "BirthDate", de.LoginID AS "LoginID", de.EmailAddress AS "EmailAddress", de.Phone AS "Phone", de.MaritalStatus AS "MaritalStatus", de.EmergencyContactName AS "EmergencyContactName", de.EmergencyContactPhone AS "EmergencyContactPhone", de.SalariedFlag AS "SalariedFlag", de.Gender AS "Gender", de.PayFrequency AS "PayFrequency", de.BaseRate AS "BaseRate", de.VacationHours AS "VacationHours", de.SickLeaveHours AS "SickLeaveHours", de.CurrentFlag AS "CurrentFlag", de.SalesPersonFlag AS "SalesPersonFlag", de.DepartmentName AS "DepartmentName", de.StartDate AS "StartDate", de.EndDate AS "EndDate", de.Status AS "Status", de.EmployeePhoto AS "EmployeePhoto"
+        FROM public.dimemployee de LEFT JOIN public.dimemployee pde ON de.ParentEmployeeKey=pde.EmployeeKey LEFT JOIN public.dimsalesterritory dst ON de.SalesTerritoryKey=dst.SalesTerritoryKey
+    primary_key: [EmployeeNationalIDAlternateKey]
+    compare_columns: [ParentEmployeeNationalIDAlternateKey, SalesTerritoryAlternateKey, FirstName, LastName, MiddleName, NameStyle, Title, HireDate, BirthDate, LoginID, EmailAddress, Phone, MaritalStatus, EmergencyContactName, EmergencyContactPhone, SalariedFlag, Gender, PayFrequency, BaseRate, VacationHours, SickLeaveHours, CurrentFlag, SalesPersonFlag, DepartmentName, StartDate, EndDate, Status, EmployeePhoto]
+    validations:
+      aggregate:
+        metrics:
+          - column: EmployeeNationalIDAlternateKey
+            checks: [count_distinct, null_count]
+          - column: DepartmentName
+            checks: [count_distinct, null_count]
+          - column: Status
+            checks: [count_distinct, null_count]
+  - name: dim_organization_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT src.parent_organization_key AS "ParentOrganizationKey", src.percentage_of_ownership AS "PercentageOfOwnership", TRIM(src.organization_name) AS "OrganizationName", src.currency_code AS "CurrencyAlternateKey"
+        FROM (VALUES (NULL::BIGINT,'100.00','Adventure Works Cycles','USD')) src(parent_organization_key,percentage_of_ownership,organization_name,currency_code)
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT o.ParentOrganizationKey AS "ParentOrganizationKey", o.PercentageOfOwnership AS "PercentageOfOwnership", TRIM(o.OrganizationName) AS "OrganizationName", c.CurrencyAlternateKey AS "CurrencyAlternateKey"
+        FROM public.dimorganization o LEFT JOIN public.dimcurrency c ON o.CurrencyKey=c.CurrencyKey
+    primary_key: [OrganizationName]
+    compare_columns: [ParentOrganizationKey, PercentageOfOwnership, CurrencyAlternateKey]
+    validations:
+      aggregate:
+        metrics:
+          - column: OrganizationName
+            checks: [count_distinct, null_count]
+          - column: CurrencyAlternateKey
+            checks: [count_distinct, null_count]
+  - name: dim_reseller_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT s.businessentityid::text AS "ResellerAlternateKey", CONCAT_WS('|',a.city,sp.stateprovincecode,cr.countryregioncode,a.postalcode) AS "GeographyNaturalKey", pp.phonenumber AS "Phone", NULL::text AS "BusinessType", TRIM(s.name) AS "ResellerName", NULL::integer AS "NumberEmployees", NULL::text AS "OrderFrequency", NULL::integer AS "OrderMonth", EXTRACT(YEAR FROM MIN(soh.orderdate))::integer AS "FirstOrderYear", EXTRACT(YEAR FROM MAX(soh.orderdate))::integer AS "LastOrderYear", NULL::text AS "ProductLine", a.addressline1 AS "AddressLine1", a.addressline2 AS "AddressLine2", NULL::numeric AS "AnnualSales", NULL::text AS "BankName", NULL::integer AS "MinPaymentType", NULL::numeric AS "MinPaymentAmount", NULL::numeric AS "AnnualRevenue", NULL::integer AS "YearOpened"
+        FROM sales.store s LEFT JOIN person.businessentityaddress bea ON s.businessentityid=bea.businessentityid LEFT JOIN person.address a ON bea.addressid=a.addressid LEFT JOIN person.stateprovince sp ON a.stateprovinceid=sp.stateprovinceid LEFT JOIN person.countryregion cr ON sp.countryregioncode=cr.countryregioncode LEFT JOIN person.personphone pp ON s.businessentityid=pp.businessentityid LEFT JOIN sales.customer c ON s.businessentityid=c.storeid LEFT JOIN sales.salesorderheader soh ON c.customerid=soh.customerid GROUP BY s.businessentityid,a.city,sp.stateprovincecode,cr.countryregioncode,a.postalcode,pp.phonenumber,s.name,a.addressline1,a.addressline2
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT dr.ResellerAlternateKey AS "ResellerAlternateKey", CONCAT_WS('|',dg.City,dg.StateProvinceCode,dg.CountryRegionCode,dg.PostalCode) AS "GeographyNaturalKey", dr.Phone AS "Phone", dr.BusinessType AS "BusinessType", dr.ResellerName AS "ResellerName", dr.NumberEmployees AS "NumberEmployees", dr.OrderFrequency AS "OrderFrequency", dr.OrderMonth AS "OrderMonth", dr.FirstOrderYear AS "FirstOrderYear", dr.LastOrderYear AS "LastOrderYear", dr.ProductLine AS "ProductLine", dr.AddressLine1 AS "AddressLine1", dr.AddressLine2 AS "AddressLine2", dr.AnnualSales AS "AnnualSales", dr.BankName AS "BankName", dr.MinPaymentType AS "MinPaymentType", dr.MinPaymentAmount AS "MinPaymentAmount", dr.AnnualRevenue AS "AnnualRevenue", dr.YearOpened AS "YearOpened"
+        FROM public.dimreseller dr LEFT JOIN public.dimgeography dg ON dr.GeographyKey=dg.GeographyKey
+    primary_key: [ResellerAlternateKey]
+    compare_columns: [GeographyNaturalKey, Phone, BusinessType, ResellerName, NumberEmployees, OrderFrequency, OrderMonth, FirstOrderYear, LastOrderYear, ProductLine, AddressLine1, AddressLine2, AnnualSales, BankName, MinPaymentType, MinPaymentAmount, AnnualRevenue, YearOpened]
+    validations:
+      aggregate:
+        metrics:
+          - column: ResellerAlternateKey
+            checks: [count_distinct, null_count]
+          - column: ResellerName
+            checks: [count_distinct, null_count]
+          - column: FirstOrderYear
+            checks: [count_distinct, null_count]
+          - column: LastOrderYear
+            checks: [count_distinct, null_count]
+  - name: fact_currency_rate_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT cr.tocurrencycode AS "CurrencyAlternateKey", TO_CHAR(cr.currencyratedate::date,'YYYYMMDD')::integer AS "DateKey", cr.averagerate AS "AverageRate", cr.endofdayrate AS "EndOfDayRate", cr.currencyratedate::date AS "Date"
+        FROM sales.currencyrate cr
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT dc.CurrencyAlternateKey AS "CurrencyAlternateKey", fcr.DateKey AS "DateKey", fcr.AverageRate AS "AverageRate", fcr.EndOfDayRate AS "EndOfDayRate", fcr.Date AS "Date"
+        FROM public.factcurrencyrate fcr LEFT JOIN public.dimcurrency dc ON fcr.CurrencyKey=dc.CurrencyKey
+    primary_key: [CurrencyAlternateKey, DateKey]
+    compare_columns: [AverageRate, EndOfDayRate, Date]
+    validations:
+      aggregate:
+        metrics:
+          - column: AverageRate
+            checks: [sum, avg]
+          - column: EndOfDayRate
+            checks: [sum, avg]
+      statistical:
+        metrics:
+          - column: AverageRate
+            checks: [mean, stddev]
+          - column: EndOfDayRate
+            checks: [mean, stddev]
+  - name: fact_call_center_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT "FactCallCenterID", TO_CHAR("Date"::date,'YYYYMMDD')::integer AS "DateKey", "WageType", "Shift", "LevelOneOperators", "LevelTwoOperators", "TotalOperators", "Calls", "AutomaticResponses", "Orders", "IssuesRaised", "AverageTimePerIssue", "ServiceGrade", "Date"::date AS "Date" FROM public.factcallcenter
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT FactCallCenterID AS "FactCallCenterID", DateKey AS "DateKey", WageType AS "WageType", Shift AS "Shift", LevelOneOperators AS "LevelOneOperators", LevelTwoOperators AS "LevelTwoOperators", TotalOperators AS "TotalOperators", Calls AS "Calls", AutomaticResponses AS "AutomaticResponses", Orders AS "Orders", IssuesRaised AS "IssuesRaised", AverageTimePerIssue AS "AverageTimePerIssue", ServiceGrade AS "ServiceGrade", Date AS "Date" FROM public.factcallcenter
+    primary_key: [FactCallCenterID]
+    compare_columns: [DateKey, WageType, Shift, LevelOneOperators, LevelTwoOperators, TotalOperators, Calls, AutomaticResponses, Orders, IssuesRaised, AverageTimePerIssue, ServiceGrade, Date]
+    validations:
+      aggregate:
+        metrics:
+          - column: DateKey
+            checks: [count_distinct, null_count]
+          - column: WageType
+            checks: [count_distinct, null_count]
+          - column: Shift
+            checks: [count_distinct, null_count]
+  - name: fact_product_inventory_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT p.productnumber AS "ProductAlternateKey", TO_CHAR(th.transactiondate::date,'YYYYMMDD')::integer AS "DateKey", TO_CHAR(th.transactiondate::date,'YYYY-MM-DD') AS "MovementDate", th.actualcost AS "UnitCost", CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity ELSE 0 END AS "UnitsIn", CASE WHEN th.transactiontype='S' THEN th.quantity ELSE 0 END AS "UnitsOut", SUM(CASE WHEN th.transactiontype IN ('P','W') THEN th.quantity WHEN th.transactiontype='S' THEN -th.quantity ELSE 0 END) OVER (PARTITION BY th.productid ORDER BY th.transactiondate,th.transactionid) AS "UnitsBalance"
+        FROM production.transactionhistory th JOIN production.product p ON th.productid=p.productid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fpi.DateKey AS "DateKey", fpi.MovementDate AS "MovementDate", fpi.UnitCost AS "UnitCost", fpi.UnitsIn AS "UnitsIn", fpi.UnitsOut AS "UnitsOut", fpi.UnitsBalance AS "UnitsBalance" FROM public.factproductinventory fpi LEFT JOIN public.dimproduct dp ON fpi.ProductKey=dp.ProductKey
+    primary_key: [ProductAlternateKey, DateKey, MovementDate]
+    compare_columns: [UnitCost, UnitsIn, UnitsOut, UnitsBalance]
+    validations:
+      aggregate:
+        metrics:
+          - column: UnitsIn
+            checks: [sum]
+          - column: UnitsOut
+            checks: [sum]
+          - column: UnitsBalance
+            checks: [sum]
+  - name: fact_sales_quota_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT e.nationalidnumber AS "EmployeeNationalIDAlternateKey", TO_CHAR(sq.quotadate::date,'YYYYMMDD')::integer AS "DateKey", EXTRACT(YEAR FROM sq.quotadate)::integer AS "CalendarYear", EXTRACT(QUARTER FROM sq.quotadate)::integer AS "CalendarQuarter", sq.salesquota AS "SalesAmountQuota", sq.quotadate::date AS "Date" FROM sales.salespersonquotahistory sq JOIN humanresources.employee e ON sq.businessentityid=e.businessentityid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT de.EmployeeNationalIDAlternateKey AS "EmployeeNationalIDAlternateKey", fsq.DateKey AS "DateKey", fsq.CalendarYear AS "CalendarYear", fsq.CalendarQuarter AS "CalendarQuarter", fsq.SalesAmountQuota AS "SalesAmountQuota", fsq.Date AS "Date" FROM public.factsalesquota fsq LEFT JOIN public.dimemployee de ON fsq.EmployeeKey=de.EmployeeKey
+    primary_key: [EmployeeNationalIDAlternateKey, DateKey]
+    compare_columns: [CalendarYear, CalendarQuarter, SalesAmountQuota, Date]
+    validations:
+      aggregate:
+        metrics:
+          - column: SalesAmountQuota
+            checks: [sum, avg]
+  - name: fact_finance_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT ff.datekey AS "DateKey", ff.organizationkey AS "OrganizationKey", ff.departmentgroupkey AS "DepartmentGroupKey", ff.scenariokey AS "ScenarioKey", ff.accountkey AS "AccountKey", ff.amount AS "Amount", ff.date::date AS "Date" FROM public.factfinance ff
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT DateKey AS "DateKey", OrganizationKey AS "OrganizationKey", DepartmentGroupKey AS "DepartmentGroupKey", ScenarioKey AS "ScenarioKey", AccountKey AS "AccountKey", Amount AS "Amount", Date AS "Date" FROM public.factfinance
+    primary_key: [DateKey, OrganizationKey, DepartmentGroupKey, ScenarioKey, AccountKey]
+    compare_columns: [Amount, Date]
+    validations:
+      aggregate:
+        metrics:
+          - column: Amount
+            checks: [sum, avg]
+      statistical:
+        metrics:
+          - column: Amount
+            checks: [mean, stddev]
+  - name: fact_reseller_sales_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        WITH fact_source AS (
+          SELECT soh.salesorderid, sod.salesorderdetailid AS sales_order_line_number,
+                 soh.salesordernumber, soh.revisionnumber, soh.orderdate AS order_date,
+                 soh.duedate AS due_date, soh.shipdate AS ship_date, soh.customerid,
+                 soh.salespersonid, soh.territoryid, cr.tocurrencycode, sod.productid,
+                 sod.specialofferid, sod.orderqty, sod.unitprice, sod.unitpricediscount,
+                 sod.linetotal, sod.carriertrackingnumber, soh.purchaseordernumber,
+                 soh.taxamt, soh.freight
+          FROM sales.salesorderheader soh
+          JOIN sales.salesorderdetail sod ON soh.salesorderid = sod.salesorderid
+          LEFT JOIN sales.currencyrate cr ON soh.currencyrateid = cr.currencyrateid
+          WHERE soh.onlineorderflag = FALSE
+        )
+        SELECT fs.salesordernumber AS "SalesOrderNumber",
+               fs.sales_order_line_number AS "SalesOrderLineNumber",
+               p.productnumber AS "ProductAlternateKey",
+               s.businessentityid::text AS "ResellerAlternateKey",
+               e.nationalidnumber AS "EmployeeNationalIDAlternateKey",
+               fs.specialofferid AS "PromotionAlternateKey",
+               COALESCE(fs.tocurrencycode, 'USD') AS "CurrencyAlternateKey",
+               fs.territoryid AS "SalesTerritoryAlternateKey",
+               TO_CHAR(fs.order_date::date, 'YYYYMMDD')::integer AS "OrderDateKey",
+               TO_CHAR(fs.due_date::date, 'YYYYMMDD')::integer AS "DueDateKey",
+               TO_CHAR(fs.ship_date::date, 'YYYYMMDD')::integer AS "ShipDateKey",
+               fs.revisionnumber AS "RevisionNumber", fs.orderqty AS "OrderQuantity",
+               fs.unitprice AS "UnitPrice", fs.linetotal AS "ExtendedAmount",
+               fs.unitpricediscount AS "UnitPriceDiscountPct",
+               fs.orderqty * fs.unitprice * fs.unitpricediscount AS "DiscountAmount",
+               p.standardcost AS "ProductStandardCost",
+               fs.orderqty * p.standardcost AS "TotalProductCost",
+               fs.orderqty * fs.unitprice AS "SalesAmount", fs.taxamt AS "TaxAmt",
+               fs.freight AS "Freight", fs.carriertrackingnumber AS "CarrierTrackingNumber",
+               fs.purchaseordernumber AS "CustomerPONumber", fs.order_date AS "OrderDate",
+               fs.due_date AS "DueDate", fs.ship_date AS "ShipDate"
+        FROM fact_source fs
+        JOIN production.product p ON fs.productid = p.productid
+        JOIN sales.customer c ON fs.customerid = c.customerid
+        JOIN sales.store s ON c.storeid = s.businessentityid
+        LEFT JOIN humanresources.employee e ON fs.salespersonid = e.businessentityid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT frs.SalesOrderNumber AS "SalesOrderNumber", frs.SalesOrderLineNumber AS "SalesOrderLineNumber",
+               dp.ProductAlternateKey AS "ProductAlternateKey", dr.ResellerAlternateKey AS "ResellerAlternateKey",
+               de.EmployeeNationalIDAlternateKey AS "EmployeeNationalIDAlternateKey",
+               dpr.PromotionAlternateKey AS "PromotionAlternateKey", dcu.CurrencyAlternateKey AS "CurrencyAlternateKey",
+               dst.SalesTerritoryAlternateKey AS "SalesTerritoryAlternateKey", frs.OrderDateKey AS "OrderDateKey",
+               frs.DueDateKey AS "DueDateKey", frs.ShipDateKey AS "ShipDateKey", frs.RevisionNumber AS "RevisionNumber",
+               frs.OrderQuantity AS "OrderQuantity", frs.UnitPrice AS "UnitPrice", frs.ExtendedAmount AS "ExtendedAmount",
+               frs.UnitPriceDiscountPct AS "UnitPriceDiscountPct", frs.DiscountAmount AS "DiscountAmount",
+               frs.ProductStandardCost AS "ProductStandardCost", frs.TotalProductCost AS "TotalProductCost",
+               frs.SalesAmount AS "SalesAmount", frs.TaxAmt AS "TaxAmt", frs.Freight AS "Freight",
+               frs.CarrierTrackingNumber AS "CarrierTrackingNumber", frs.CustomerPONumber AS "CustomerPONumber",
+               frs.OrderDate AS "OrderDate", frs.DueDate AS "DueDate", frs.ShipDate AS "ShipDate"
+        FROM public.factresellersales frs
+        LEFT JOIN public.dimproduct dp ON frs.ProductKey = dp.ProductKey
+        LEFT JOIN public.dimreseller dr ON frs.ResellerKey = dr.ResellerKey
+        LEFT JOIN public.dimemployee de ON frs.EmployeeKey = de.EmployeeKey
+        LEFT JOIN public.dimpromotion dpr ON frs.PromotionKey = dpr.PromotionKey
+        LEFT JOIN public.dimcurrency dcu ON frs.CurrencyKey = dcu.CurrencyKey
+        LEFT JOIN public.dimsalesterritory dst ON frs.SalesTerritoryKey = dst.SalesTerritoryKey
+    primary_key: [SalesOrderNumber, SalesOrderLineNumber]
+    compare_columns: [ProductAlternateKey, ResellerAlternateKey, EmployeeNationalIDAlternateKey, PromotionAlternateKey, CurrencyAlternateKey, SalesTerritoryAlternateKey, OrderDateKey, DueDateKey, ShipDateKey, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber, OrderDate, DueDate, ShipDate]
+    validations:
+      aggregate:
+        group_by: [OrderDateKey]
+        metrics:
+          - column: OrderQuantity
+            checks: [sum, count]
+          - column: SalesAmount
+            checks: [sum, avg]
+          - column: ExtendedAmount
+            checks: [sum]
+      statistical:
+        metrics:
+          - column: UnitPrice
+            checks: [mean, stddev, p50]
+          - column: SalesAmount
+            checks: [mean, stddev]
+          - column: OrderQuantity
+            checks: [mean, stddev]
+  - name: fact_intl_product_desc_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT p.productnumber AS "ProductAlternateKey", c.name AS "CultureName", pd.description AS "ProductDescription" FROM production.product p JOIN production.productmodelproductdescriptionculture pmpdc ON p.productmodelid=pmpdc.productmodelid JOIN production.productdescription pd ON pmpdc.productdescriptionid=pd.productdescriptionid JOIN production.culture c ON pmpdc.cultureid=c.cultureid
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT dp.ProductAlternateKey AS "ProductAlternateKey", fa.CultureName AS "CultureName", fa.ProductDescription AS "ProductDescription" FROM public.factadditionalinternationalproductdescription fa LEFT JOIN public.dimproduct dp ON fa.ProductKey=dp.ProductKey
+    primary_key: [ProductAlternateKey, CultureName]
+    compare_columns: [ProductDescription]
+    validations:
+      aggregate:
+        metrics:
+          - column: CultureName
+            checks: [count_distinct, null_count]
+          - column: ProductDescription
+            checks: [count_distinct, null_count]
+  - name: fact_survey_response_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT TO_CHAR(sr.date::date,'YYYYMMDD')::integer AS "DateKey", sr.customeralternatekey AS "CustomerAlternateKey", sr.productcategoryalternatekey AS "ProductCategoryAlternateKey", sr.productsubcategoryalternatekey AS "ProductSubcategoryAlternateKey", sr.date::date AS "Date" FROM public.surveyresponse sr
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT fsr.DateKey AS "DateKey", dc.CustomerAlternateKey AS "CustomerAlternateKey", dpc.ProductCategoryAlternateKey AS "ProductCategoryAlternateKey", dps.ProductSubcategoryAlternateKey AS "ProductSubcategoryAlternateKey", fsr.Date AS "Date" FROM public.factsurveyresponse fsr LEFT JOIN public.dimcustomer dc ON fsr.CustomerKey=dc.CustomerKey LEFT JOIN public.dimproductcategory dpc ON fsr.ProductCategoryKey=dpc.ProductCategoryKey LEFT JOIN public.dimproductsubcategory dps ON fsr.ProductSubcategoryKey=dps.ProductSubcategoryKey
+    primary_key: [DateKey, CustomerAlternateKey, ProductCategoryAlternateKey, ProductSubcategoryAlternateKey]
+    compare_columns: [Date]
+    validations:
+      aggregate:
+        metrics:
+          - column: DateKey
+            checks: [count_distinct, null_count]
+          - column: CustomerAlternateKey
+            checks: [count_distinct, null_count]
+
+  - name: dim_scenario_validation
+    mapping_mode: query_to_query
+    source:
+      connection: source_postgres
+      query: |
+        SELECT
+          CAST(src.ScenarioKey AS BIGINT) AS "ScenarioKey",
+          src.ScenarioName AS "ScenarioName"
+        FROM (
+          SELECT
+            1 AS ScenarioKey,
+            'Actual' AS ScenarioName
+
+          UNION ALL
+
+          SELECT
+            2 AS ScenarioKey,
+            'Budget' AS ScenarioName
+
+          UNION ALL
+
+          SELECT
+            3 AS ScenarioKey,
+            'Forecast' AS ScenarioName
+        ) src
+
+    target:
+      connection: target_snowflake
+      query: |
+        SELECT
+          CAST(ScenarioKey AS BIGINT) AS "ScenarioKey",
+          ScenarioName AS "ScenarioName"
+        FROM public.dimscenario
+
+    primary_key: [ScenarioKey]
+    compare_columns: [ScenarioName]
+
+    validations:
+      aggregate:
+        metrics:
+          - column: ScenarioName
+            checks: [count_distinct, null_count]
+
+      statistical:
+        metrics:
+          - column: ScenarioName
+            checks: [distinct_count, null_rate]
