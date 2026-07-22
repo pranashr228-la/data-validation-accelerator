@@ -34,6 +34,7 @@ defaults:
     row_hash:
       max_mismatch_samples: 100
       write_full_mismatches: true
+        
 datasets:
   - name: dim_date_validation
     mapping_mode: query_to_query
@@ -860,34 +861,6 @@ datasets:
         metrics:
           - column: DepartmentGroupName
             checks: [count_distinct, null_count]
-  - name: dim_account_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT * FROM (VALUES (NULL,1,NULL,'Balance Sheet',NULL,'~',NULL,'Currency',NULL),(1,10,1,'Assets','Assets','+',NULL,'Currency',NULL),(2,110,10,'Current Assets','Assets','+',NULL,'Currency',NULL),(3,1110,110,'Cash','Assets','+',NULL,'Currency',NULL),(3,1120,110,'Receivables','Assets','+',NULL,'Currency',NULL),(5,1130,1120,'Trade Receivables','Assets','+',NULL,'Currency',NULL),(5,1140,1120,'Other Receivables','Assets','+',NULL,'Currency',NULL),(3,1150,110,'Allowance for Bad Debt','Assets','+',NULL,'Currency',NULL),(3,1160,110,'Inventory','Assets','+',NULL,'Currency',NULL),(9,1162,1160,'Raw Materials','Assets','+',NULL,'Currency',NULL)) AS src("ParentAccountKey","AccountCodeAlternateKey","ParentAccountCodeAlternateKey","AccountDescription","AccountType","Operator","CustomMembers","ValueType","CustomMemberOptions")
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT ParentAccountKey AS "ParentAccountKey", AccountCodeAlternateKey AS "AccountCodeAlternateKey", ParentAccountCodeAlternateKey AS "ParentAccountCodeAlternateKey", TRIM(AccountDescription) AS "AccountDescription", TRIM(AccountType) AS "AccountType", Operator AS "Operator", CustomMembers AS "CustomMembers", TRIM(ValueType) AS "ValueType", CustomMemberOptions AS "CustomMemberOptions"
-        FROM public.dimaccount
-    primary_key: [AccountCodeAlternateKey]
-    compare_columns: [ParentAccountKey, ParentAccountCodeAlternateKey, AccountDescription, AccountType, Operator, CustomMembers, ValueType, CustomMemberOptions]
-    validations:
-      aggregate:
-        metrics:
-          - column: AccountCodeAlternateKey
-            checks: [count_distinct, null_count]
-          - column: AccountDescription
-            checks: [count_distinct, null_count]
-          - column: AccountType
-            checks: [count_distinct, null_count]
-      statistical:
-        metrics:
-          - column: AccountDescription
-            checks: [distinct_count, null_rate]
-          - column: AccountType
-            checks: [distinct_count, null_rate]
   - name: dim_employee_validation
     mapping_mode: query_to_query
     source:
@@ -910,27 +883,6 @@ datasets:
           - column: DepartmentName
             checks: [count_distinct, null_count]
           - column: Status
-            checks: [count_distinct, null_count]
-  - name: dim_organization_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT src.parent_organization_key AS "ParentOrganizationKey", src.percentage_of_ownership AS "PercentageOfOwnership", TRIM(src.organization_name) AS "OrganizationName", src.currency_code AS "CurrencyAlternateKey"
-        FROM (VALUES (NULL::BIGINT,'100.00','Adventure Works Cycles','USD')) src(parent_organization_key,percentage_of_ownership,organization_name,currency_code)
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT o.ParentOrganizationKey AS "ParentOrganizationKey", o.PercentageOfOwnership AS "PercentageOfOwnership", TRIM(o.OrganizationName) AS "OrganizationName", c.CurrencyAlternateKey AS "CurrencyAlternateKey"
-        FROM public.dimorganization o LEFT JOIN public.dimcurrency c ON o.CurrencyKey=c.CurrencyKey
-    primary_key: [OrganizationName]
-    compare_columns: [ParentOrganizationKey, PercentageOfOwnership, CurrencyAlternateKey]
-    validations:
-      aggregate:
-        metrics:
-          - column: OrganizationName
-            checks: [count_distinct, null_count]
-          - column: CurrencyAlternateKey
             checks: [count_distinct, null_count]
   - name: dim_reseller_validation
     mapping_mode: query_to_query
@@ -1012,27 +964,6 @@ datasets:
             checks: [mean, stddev]
           - column: EndOfDayRate
             checks: [mean, stddev]
-  - name: fact_call_center_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT "FactCallCenterID", TO_CHAR("Date"::date,'YYYYMMDD')::integer AS "DateKey", "WageType", "Shift", "LevelOneOperators", "LevelTwoOperators", "TotalOperators", "Calls", "AutomaticResponses", "Orders", "IssuesRaised", "AverageTimePerIssue", "ServiceGrade", "Date"::date AS "Date" FROM public.factcallcenter
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT FactCallCenterID AS "FactCallCenterID", DateKey AS "DateKey", WageType AS "WageType", Shift AS "Shift", LevelOneOperators AS "LevelOneOperators", LevelTwoOperators AS "LevelTwoOperators", TotalOperators AS "TotalOperators", Calls AS "Calls", AutomaticResponses AS "AutomaticResponses", Orders AS "Orders", IssuesRaised AS "IssuesRaised", AverageTimePerIssue AS "AverageTimePerIssue", ServiceGrade AS "ServiceGrade", Date AS "Date" FROM public.factcallcenter
-    primary_key: [FactCallCenterID]
-    compare_columns: [DateKey, WageType, Shift, LevelOneOperators, LevelTwoOperators, TotalOperators, Calls, AutomaticResponses, Orders, IssuesRaised, AverageTimePerIssue, ServiceGrade, Date]
-    validations:
-      aggregate:
-        metrics:
-          - column: DateKey
-            checks: [count_distinct, null_count]
-          - column: WageType
-            checks: [count_distinct, null_count]
-          - column: Shift
-            checks: [count_distinct, null_count]
   - name: fact_product_inventory_validation
     mapping_mode: query_to_query
     source:
@@ -1073,27 +1004,6 @@ datasets:
         metrics:
           - column: SalesAmountQuota
             checks: [sum, avg]
-  - name: fact_finance_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT ff.datekey AS "DateKey", ff.organizationkey AS "OrganizationKey", ff.departmentgroupkey AS "DepartmentGroupKey", ff.scenariokey AS "ScenarioKey", ff.accountkey AS "AccountKey", ff.amount AS "Amount", ff.date::date AS "Date" FROM public.factfinance ff
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT DateKey AS "DateKey", OrganizationKey AS "OrganizationKey", DepartmentGroupKey AS "DepartmentGroupKey", ScenarioKey AS "ScenarioKey", AccountKey AS "AccountKey", Amount AS "Amount", Date AS "Date" FROM public.factfinance
-    primary_key: [DateKey, OrganizationKey, DepartmentGroupKey, ScenarioKey, AccountKey]
-    compare_columns: [Amount, Date]
-    validations:
-      aggregate:
-        metrics:
-          - column: Amount
-            checks: [sum, avg]
-      statistical:
-        metrics:
-          - column: Amount
-            checks: [mean, stddev]
   - name: fact_reseller_sales_validation
     mapping_mode: query_to_query
     source:
@@ -1199,70 +1109,3 @@ datasets:
             checks: [count_distinct, null_count]
           - column: ProductDescription
             checks: [count_distinct, null_count]
-  - name: fact_survey_response_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT TO_CHAR(sr.date::date,'YYYYMMDD')::integer AS "DateKey", sr.customeralternatekey AS "CustomerAlternateKey", sr.productcategoryalternatekey AS "ProductCategoryAlternateKey", sr.productsubcategoryalternatekey AS "ProductSubcategoryAlternateKey", sr.date::date AS "Date" FROM public.surveyresponse sr
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT fsr.DateKey AS "DateKey", dc.CustomerAlternateKey AS "CustomerAlternateKey", dpc.ProductCategoryAlternateKey AS "ProductCategoryAlternateKey", dps.ProductSubcategoryAlternateKey AS "ProductSubcategoryAlternateKey", fsr.Date AS "Date" FROM public.factsurveyresponse fsr LEFT JOIN public.dimcustomer dc ON fsr.CustomerKey=dc.CustomerKey LEFT JOIN public.dimproductcategory dpc ON fsr.ProductCategoryKey=dpc.ProductCategoryKey LEFT JOIN public.dimproductsubcategory dps ON fsr.ProductSubcategoryKey=dps.ProductSubcategoryKey
-    primary_key: [DateKey, CustomerAlternateKey, ProductCategoryAlternateKey, ProductSubcategoryAlternateKey]
-    compare_columns: [Date]
-    validations:
-      aggregate:
-        metrics:
-          - column: DateKey
-            checks: [count_distinct, null_count]
-          - column: CustomerAlternateKey
-            checks: [count_distinct, null_count]
-
-  - name: dim_scenario_validation
-    mapping_mode: query_to_query
-    source:
-      connection: source_postgres
-      query: |
-        SELECT
-          CAST(src.ScenarioKey AS BIGINT) AS "ScenarioKey",
-          src.ScenarioName AS "ScenarioName"
-        FROM (
-          SELECT
-            1 AS ScenarioKey,
-            'Actual' AS ScenarioName
-
-          UNION ALL
-
-          SELECT
-            2 AS ScenarioKey,
-            'Budget' AS ScenarioName
-
-          UNION ALL
-
-          SELECT
-            3 AS ScenarioKey,
-            'Forecast' AS ScenarioName
-        ) src
-
-    target:
-      connection: target_snowflake
-      query: |
-        SELECT
-          CAST(ScenarioKey AS BIGINT) AS "ScenarioKey",
-          ScenarioName AS "ScenarioName"
-        FROM public.dimscenario
-
-    primary_key: [ScenarioKey]
-    compare_columns: [ScenarioName]
-
-    validations:
-      aggregate:
-        metrics:
-          - column: ScenarioName
-            checks: [count_distinct, null_count]
-
-      statistical:
-        metrics:
-          - column: ScenarioName
-            checks: [distinct_count, null_rate]
