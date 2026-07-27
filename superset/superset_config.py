@@ -17,9 +17,9 @@ APP_ICON = "/static/assets/images/superset-logo-horiz.png"
 TALISMAN_ENABLED = False
 WTF_CSRF_ENABLED = False
 
-SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://postgres:postgres@host.containers.internal:5432/superset"
+SQLALCHEMY_DATABASE_URI = "postgresql+psycopg2://dva:dva@postgres:5432/superset"
 
 # Allow Superset to query the DVA results database via bootstrap script.
 ADDITIONAL_DATABASES = {
-    "dva_results": "postgresql+psycopg2://postgres:postgres@host.containers.internal:5432/dva",
+    "dva_results": "postgresql+psycopg2://dva:dva@postgres:5432/dva",
 }
