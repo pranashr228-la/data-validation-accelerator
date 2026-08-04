@@ -1,431 +1,247 @@
-<!--# 53HrjQZjNNLnFmJM2tjPrs6NW5mnF5jQ46QH2ZHd-->
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3c.org/TR/1999/REC-html401-19991224/loose.dtd">
-<html>
-<head>
-<meta name="description" content="Zscaler makes the internet safe for businesses by protecting their employees from malware, viruses, and other security threats.">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Internet Security by Zscaler</title>
-<script language="JavaScript">var defLang = 'en_US'</script>
-<!--NTT DATA Inc-->
-<style type="text/css">
-body {
-background-color:#e3e3e3;
-font-family:Arial, sans-serif;
-font-size:12px;
-color:#4B4F54;
-}
-a {
-cursor:pointer;
-text-decoration:none;
-color:#009dd0;
-}
-table {
-margin-top:10px;
-}
-td table {
-margin-top:0;
-text-align:center;
-}
-img {
-max-height:75px;
-max-width:430px;
-}
-.pg {
-position:absolute;
-top:0;
-bottom:0;
-left:0;
-right:0;
-overflow-x:hidden;
-white-space:nowrap;
-}
-.pg:before {
-content:"";
-display:inline-block;
-height:100%;
-vertical-align:middle;
-}
-.pg_cont {
-display:inline-block;
-vertical-align:middle;
-width:100%;
-position:relative;
-}
-.a_i {
-width:19px;
-height:19px;
-margin-right:10px;
-background-size: 19px 19px;
-display:inline-block;
-}
-.m_tbl {
-width:100%;
-max-width:758px;
-background:#e3e3e3;
-min-width:600px;
-}
-.pg.red .eu_h {
-color:#fd4239;
-border-top:3px solid #fd4239;
-}
-.pg.red .eu_h .a_i {
-background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAATCAYAAAByUDbMAAABoElEQVR4nK3Uz2vIYRzA8dcMzWGJdjSZKZLCDphfB7XVHBAXF2XFpJxd+BvUbtY20m4KxVExtbWkUYQLByU3OVhpy8zh+Tzr2dN3t30un1/P834+z/N8noc1lBZYPNVbx3twDQPYFuN+4RUm8ARL5YTWFzPWVZA2jGIWQ+jMC2ILzuERZrCjrmB9YW/CcxwLfwFTAf6J3TiPzTiMNziJz02wkQL0DpfwsVp8OCAb0IFnOIA5LG/zeEwWgN4GUBeeBihLN25mJ8NuhF7CIOYbQJPYHv59fAv7OlpL2OnQH2IbpexsAF3BePgdOFTC2kO/bQC9LED3AvTPymPoYuUFkHqprqizAF0NECwWY9vKynJi1yqg8QoEBwv7ewmbCt2HIw2goQrUgv6wF6QmXoY9KMqdLkBjDSDSueU3+Bi/S9gE3oedY2PS+6xBF3En7Hnczol8AX9xAa+xNWJHpXOajXwPzuBsAR7E1xoGX3BC6vJu7MVdzfIHl/GwDNa/xifsxy1xQ5XMSS2ypwax+n+Wc/ukr2YjfkhNXT81pP9sTeU/6YpejkX0NUMAAAAASUVORK5CYII=');
-}
-.pg.red .eu_h, .pg.red .eu_co, .pg.red .hr {
-border-left:3px solid #fd4239;
-border-right:3px solid #fd4239;
-}
-.pg.red .fo {
-border-bottom-color:#fd4239;
-}
-.pg.red .eu_co.st{
-border:0;
-}
-.pg.yl .eu_h .a_i {
-background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAFgUlEQVR4nO2dOWxcVRSGP0+wWWKSiC1WMAV7SAI0bBLBLBI0bEUSyiSAFCOgYLMpEBA3JCEUCISQEBIIKtIgpaCho6KhAglkCQlRRBAhKBIQW4Di5iHH+M28c+85955h7leO5y6eb972v/PuQKVSqQwNY5+8V3oKYi4C3gXuaPn7x8Bu4Eim+agxsxN6pSch5GrgM9plANx58j0bs8xImWESsho4BJzf4b1TwAfAGaYzMmCYhDyH7Ft/DTBvNBczhkXINPBkRLs54ALluZgyLEIWiNv9TAIvKM/FlGEQsoVw1hTLLHCFzlTsGQYh+0mb52nAS0pzMce7kNuBuxX62QbcpNCPOZ6F9ICXFfs7CIwp9meCZyE7gOsU+9sK3KfYnwlehUxgs9/fTzimuMWrkEeASwz63Qg8ZNCvGh6FrMX22mGBEMO4xKOQZ4FzDfufAp4y7D8Jb0KmgScyjDOP00jFm5AF4MwM47iNVDwJSY1IpLiMVDwJSY1IpLiMVLwIuQ2diESKu0jFgxDtiESKq0jFg5AdwPUFx3cVqZQWYhWRSHETqZQWYhWRSHETqZQUshZ4vuD4y3ERqZQUMg+cV3D85biIVEoJuZC4KhJrikcqpQ5kMRHJMeCosM16QkzSlSZSeVw4jholhGwGHhS2eR14Bvhd2O504BVkH/As8BqwKBxLhRK7LGlEcoI4GQC/AU8DfwvaFI1Ucgu5Fbgnol2MjIYTyK/Ei0UqOYWMEWIKKauA8YRxY+P8IpFKTiEpEclZCePGXltsBe5NGDeKXEJSI5KUm1YpMg+Q+cQnl5BZ4NKE9ikfakrb7JFKDiFrSL9dWkoIZI5UcgjRiEhK7bIgc6RiLWQDOv9MyS0EMkYq1kK0qkhKbiGQsUrFUshm9A6IJU57l5OlSsVSiGYVSektBDJFKlZCYiOSNkofQxrMIxULIWPoV5F4EQLGkYqFkO3ADcp9ethlNZhGKtpCJoB9yn2Cry0EDCMVbSGpEUkbKVuIxVW2WaSiKUQjImnD2xYCRpGKphDLKhJPx5AGk0hFS4hWRNKGxy0EDCIVLSHWD9p4FaIeqWgI2YT9PQOPu6yGWeByrc40hOR40MbrFgLKkUrqBzlDnvvO3k57l7MdpUglRUhsFUkMnreQBpVIJUWIRUTShudjSINKpBIrJPeDNlPEXeNcSZ7HrBuSI5XYxnuAy1IGFjIBfEVYk/f7jm2mgbvMZrQyTaTyVmwHMQsprwG+xtezHZ74jvBl/VnaMHYh5TmqjH4kRSpSIRsI1eSV/kRHKlIhe8l7kBxWoiMViZBNwMMxg4woUZGKRMg+4ftHnahIpetp7wzlVzv4CTgMHO/4/kngfmCd1YQ60EQqn3Zt0EWIRRWJlL+Am4Evhe22AJ/rT0fEQcIXutNjdV12QduAG1NmpMA3yGUAfAF8qzsVMaJIZZCQcWyqSKT8UaitFp0jlUFCckck/1c6V6n0E3I28KLKdCrQsUqln5A5uv28UKUbnSKVNiE1IrFhYKTSJmQv+W7sjBIDI5WVhFxFjUgs6RuprCQk93Kto0bfSGX5B38L5SOSUaC1SmWpkJxVJJWWKpWlQjxEJG2sJ24BmomTbT2yYqTSXM6P42O51jbWEQoHXqX7verVhHW2JCvK5eYA8BHwZ/NCI2QPivWpRuwm72L9OfhPlUqPGpGU5pRIpUeNSEpzSqTSo0YkHvj36bMeNSLxwCSwE+oVuScegCrEExdDFeKJVVCFeGIRqhBPHIYgRFw2X1HnGPA2BCEufllmxNkF/ABByCGClF9LzmhE+YVw/fFh80JzDHkHuBZ4k1BDW7HlR+ANwmf+/tI/LK2mWwQeBR4DzqHmW1YcJXzpJT+hUalUKpXKQP4B3AaeT/TFo6kAAAAASUVORK5CYII=');
-}
-.pg.yl .eu_h {
-color:#c2a200;
-border-top:3px solid #c2a200;
-}
-.pg.yl .eu_h, .pg.yl .eu_co, .pg.yl .hr {
-border-left:3px solid #c2a200;
-border-right:3px solid #c2a200;
-}
-.pg.yl .fo {
-border-bottom-color:#c2a200;
-}
-.pg.yl .eu_co.st{
-border:0;
-}
-.pg.or .eu_h {
-color:#e39e00;
-border-top:3px solid #e39e00;
-}
-.pg.or .eu_h .a_i {
-background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAASCAYAAAC5DOVpAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QjIzMTRDODNCQ0ExMTFFNUFBNTY5RTA4NDFEMEU0QTAiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QjIzMTRDODRCQ0ExMTFFNUFBNTY5RTA4NDFEMEU0QTAiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpCMjMxNEM4MUJDQTExMUU1QUE1NjlFMDg0MUQwRTRBMCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpCMjMxNEM4MkJDQTExMUU1QUE1NjlFMDg0MUQwRTRBMCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Poc8rmgAAAI2SURBVHjadJRdSFVBEMfvvRiGeP1IfdIKM3qQ/KQUtISCIBX8LEMFwcIPEBSEqPBREXwRQbIQS30wDUvDJEQQKkKI1C6hSQiBXB8Cw5CelPT2G5iF43Jc+DFzZmb/e87u7PGGQiGP29ga9nZgzsDbpPrQLM8X8OvgHHQR+27P8bqJMXFE3UYm7Vu5Ckw/lJBbduZ8LkJtmNtwzxaSQWwKI0zaOZ8lJM898I5JB57jxxNIpr7MGQyzis5DOOyoeAamCYrhBzyGGTAL3YQ3x4mZDcxF6CL2C5yAn1AAN6BeF/Q4RF33rEqtvNF9KIRYPjkFTuLnQDR0al0Wi54+cpoEIvHnIN9lb3phV2o1PwSnrLpKORgjJp9zCZZAjltWK3IUV2iPmQ3fhDHdpmaIkm3wIdSuQtdQv4z9oEcv/hq8JD6tn/YHGuAW/Cb+AHsWFqTOG3zu+YTTR+KVnuCqFPDsx/fjXwGJJWifrRCXE34K2Tx/1XkBOYANI6TjGUSSTCf+F9+vbzgoQlrTqu3zzTFvUsS2rc0cgF/yuQjGYwMquKFv0I1JhXarsbdFLEBBmOO67GGuQwy8hjTTRtTVYh/J3aRu1HqJoIhNkPhn3b917bUWuKvhYrV55Ftdrth70xrl0tUUTVh3tUZbwIxFavKtmmRMqfSfEZPjfQgR8BkOQYSu6pwXcsUgRXM92mtxkAnTLDJ+5H+G6B2M7Eu23tN5GKXwI7kY7bFqSJRy+bvoKQdl/n8BBgA1+diozP47HQAAAABJRU5ErkJggg==');
-}
-.pg.or .eu_h, .pg.or .eu_co, .pg.or .hr {
-border-left:3px solid #e39e00;
-border-right:3px solid #e39e00;
-}
-.pg.or .fo {
-border-bottom-color:#e39e00;
-}
-.pg.or .eu_co.st{
-border:0;
-}
-.m_tbl table td {
-padding:0 20px 16px 20px;
-text-align:left;
-background-color:white;
-}
-.m_tbl table td.bh {
-text-align:center;
-background-color:#e3e3e3;
-z-index:100;
-}
-.m_tbl table td.eu_h {
-padding-top: 20px;
-}
-.eu_h {
-vertical-align:middle;
-font-weight:normal;
-white-space:normal;
-font-size: 24px;
-background-color:white;
-border-left:3px solid;
-border-right:3px solid;
-border-top-left-radius: 10px;
-border-top-right-radius: 10px;
-}
-.pg .eu_h.sm {
-font-size:16px;
-color:#929496;
-border-top-left-radius:0;
-border-top-right-radius:0;
-border-top:0;
-padding-top:0;
-}
-hr {
-margin:0;
-border-top:0.5px solid #cfd0d1;
-}
-.eu_co {
-font-size:16px;
-color:#2a2c30;
-border-left:3px solid;
-border-right:3px solid;
-white-space: normal;
-word-wrap: break-word;
-}
-.eu_co.rsn{
-color:#000000;
-}
-.eu_l {
-display:inline;
-padding-left:5px;
-}
-.bh {
-min-height:35px;
-display:block;
-max-height:75px;
-color:#0076A9;
-font-size:16px;
-overflow:hidden;
-padding-bottom:15px;
-padding-top:5px;
-background-color:#e3e3e3;
-text-align:center;
-max-width:758px;
-text-overflow: ellipsis;
-}
-.btn {
-background:#009dd0;
-color:#FFFFFF;
-border-radius:5px;
-border:2px solid #009dd0;
-cursor:pointer;
-display:inline-block;
-height:30px;
-margin:10px 0 15px;
-font-size:18px;
-line-height:26px;
-width:auto;
-padding:0 20px;
-}
-.btn:focus {
-outline:none;
-}
-.btn:hover {
-background:#fff;
-color:#0076A9;
-}
-.eu_co.fo {
-height:32px;
-color:#696A6D;
-background-color:#f3f3f3;
-line-height:32px;
-font-size:11px;
-padding-bottom:0px;
-border-bottom:3px solid;
-border-bottom-left-radius:10px;
-border-bottom-right-radius:10px;
-}
-.eu_co.fo.pb35 {
-background-color: white;
-color: #2a2c30;
-font-size: 16px;
-padding-bottom: 20px;
-}
-.eu_co.st {
-font-size: 12px;
-padding: 10px 0;
-line-height: 20px;
-position: relative;
-color: #939393;
-background:#e3e3e3;
-border:0;
-text-align: center;
-}
-.s_img {
-vertical-align:top;
-padding-right:5px;
-background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADoAAAAMCAYAAAAzmK6YAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTExIDc5LjE1ODMyNSwgMjAxNS8wOS8xMC0wMToxMDoyMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MDg4M0FBNkZBODFFMTFFNUI3RkJGMDcxMjM1MjFGQjUiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MDg4M0FBNzBBODFFMTFFNUI3RkJGMDcxMjM1MjFGQjUiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowODgzQUE2REE4MUUxMUU1QjdGQkYwNzEyMzUyMUZCNSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowODgzQUE2RUE4MUUxMUU1QjdGQkYwNzEyMzUyMUZCNSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PkDA4BkAAANHSURBVHja1JZpSBVhFIaveevaQpGRqaVkC5UWSiutkCVtRlaWtlhRli3+CPtREBFFBUULoVBhEYVYtEALEgZmC4ZEJBFEciuznVKIdjW098BzZbqo+c/64HGcmW++Oed873nnBjQ0NLhs5OTkuJoY8WK5GCn6CI94K26Io+K+6x8ZmZmZLd53+51bMtGiXswXax33noqzokh8FJ/aOLcBxPm8NZPd7GZnHXaLZaK735wf4oJ4IdqLUHGzjZO0OArEF9T21xGQnZ3tIZHEZuZY1b6LR2IvCY8WE0WEqBGPxUVR4nhukujL83X2LlEh7ok5Ik68F1doB1+rjBNV4hL3O4kkMYh5l0UHUSnyRJoYIyazKVcl48Zd1ibavTBLNIN+a258FltYdIVYSUXtehBS9zB3s9jH/ydEMhKPINGD9lIxTbwRw8QzMZwiWqtUix5Ici7rDCGxaIp5TJwWS0VvnrV26kkxRhBjHgUvaac/i1pI8rWYKo6ICSQ3Wwyl8hZglBWO+Sb/GP5fQ8Db2dXzwsv7TEFTRCpKyCTJdRRlFV5gwW4TY8USUS66ivHiJ3MtyR0ikneFiwSSNFmnmCJsR58gC/9RzQNlrewb25l+YrE4w7VNYr84LDaKWBKwAnwT18QukSu6NRGHyXuro3i2sycpboiw2OfRVr9YwzwkG3VlScaHfGZU3kyiWY4kB4uZ9GYves5c+DbHGSRZKx6KQF6WhtxPOdY1OfanT5NZz86LHXNCkHgRMaRwXihe4Se3xED6Pp3WiCCG6axT7HTdA2IWwfnGHXogCjksFB39CpGA1Hyjgl72Yhi25nURzK6Y7K26D8QGkkliV0OR8mp2MRkzCsboInnWVPOSXrzLMYZet4KtRyFxKNLb6Lr2g0HOlMpCoVy3Pvog8lmgpVGJQZmbfuWlBbhxIK7ppo/MODJwTTOP42KPWECvheHqO9m9c2IUPV5KL8dT0EQ+hbmo6R1ml8/nr1SyTf8jUWw4HL2HYBCFrUjSi6zK/L7NboLzjXaYh4vggqh4rWOOfcu7UOAGx/VQnvX9QAni6FvPw5rVSqxOeQQwp0bn9U0l6p9ELK7lwXnjcLw6ql7AZ6nqf/gJ+FuAAQDyhegdUpDo7QAAAABJRU5ErkJggg==") no-repeat;
-width:55px;
-height:17px;
-position:relative;
-top:3px;
-display:inline-block;
-}
-.f_btn {
-display:inline-block;
-}
-.uq_cd {
-position:absolute;
-bottom:54px;
-right:25px;
-font-size:10px;
-color:#696A6D;
-}
-.s_l td {
-font-size: 13px;
-color: #77797c;
-text-align:right;
-}
-.s_l a {
-padding:4px;
-cursor:pointer;
-font-size:13px;
-}
-.s_l .sprt {
-margin-left: 6px;
-margin-right: 4px;
-padding-right: 0;
-cursor: default;
-height: 14px;
-border-left: 1px #cfd0d1 solid;
-}
-.langSelector{
-width:200px;
-}
-.langSelector td{
-text-align:right;
-}
-.logo_container{
-position:relative;
-max-width:758px;
-margin:0px auto;
-}
-.err_cd {
-font-size:16px;
-color:#2a2c30;
-text-align: left;
-background-color:white;
-padding-bottom:16px;
-}
-@media only screen and (max-width:700px) {
-td.bh{
-padding-bottom:35px;
-}
-.eu_h{
-font-size:18px;
-}
-.eu_h,.eu_co,.st{
-word-wrap:break-word;
-white-space:normal;
-}
-.sm{
-font-size:14px;
-}
-.fo{
-padding:2px 0;
-height:20px;
-line-height:20px;
-}
-.m_tbl {
-min-width: 300px;
-width: 95%;
-position:relative;
-left:-3px;
-}
-.uq_cd {
-bottom: 77px;
-}
-.a_i {
-position: relative;
-top: 4px;
-}
-.s_l {
-position: absolute;
-top:85px;
-width:100%;
-z-index:100;
-}
-.s_l a {
-padding: 0;
-}
-.m_tbl table .s_l td {
-text-align: center;
-}
-.pg{
-overflow-y:auto;
-}
-.langSelector{
-width:100%;
-}
-.langSelector td{
-text-align:center;
-}
-}
-</style>
+# Feature: Referential Integrity Validation
 
-</head>
-<body>
-<!--[if lte IE 7]>
-<style type="text/css">
-.a_i {
-display: none;
-margin-right: 0;
-width: 0;
-}
-.m_tbl {
-width: 100%;
-}
-.pg {
-text-align: center;
-width:100%;
-}
-.pg_cont {
-width: 600px;
-}
-.m_tbl table td.eu_co.st {
-background-color: #e3e3e3;
-}
-.logo_container{
-width:600px;
-}
-</style>
-<![endif]-->
-<div class="pg red">
-<div class="pg_cont">
-<div id="logo_container" class="logo_container">
-<table id="logo" width="50%" cellspacing="0" cellpadding="0" border="0" align="center">
-<tbody>
-<tr align="center">
-<td align="center" class="bh">
-<img src="https://login.zscloud.net:443/__zsig/V77jWqMfvv26R" /></td></tr>
-</tbody></table></div>
-<table class="m_tbl" cellpadding="0" cellspacing="0" align="center">
-<tbody><tr>
-<td height="100" valign="top" style="position:relative;">
-<div class="uq_cd">D22</div>
-<!--locale en_US-->
-<table id="en_US" width="100%" border="0" cellspacing="0" cellpadding="0">
-<tbody><tr><td class="eu_h">
-<i class="a_i"></i>
-Sorry, you don't have permission to visit this site.
-</td></tr>
-<tr><td class="hr"><hr></td></tr>
-<tr><td class="eu_co">
-<b><html>
-<style>
-.eu_h {display:none;}
-table {border-collapse: separate;}
-table tr:nth-child(2) {display:none;}
-table tr:nth-child(3) td {border-top:3px solid #fd4239; border-top-left-radius: 10px;
-border-top-right-radius: 10px;}
-</style>
-<h2 style="color:#fd4239;"><b>This page has been blocked by NTT DATA </b></h2>
-<p><span style="font-weight:normal;"> <a href="https://help.nttltd.global.ntt/esc?id=sc_cat_item&sys_id=7ea8604a1be5be18d6714083b24bcb84">If you believe you received this message in error, please click here to request a review of this site</a></span></p>
-</html></b>
-</td></tr>
-<tr><td class="eu_co rsn">
-Not allowed to browse <B>FileHost</B> category
-</td></tr>
-<tr><td class="eu_co">
-You tried to visit:<div class="eu_l"><a href="https://raw.githubusercontent.com/pranashr228-la/data-validation-accelerator/refs/heads/phase-1-enhancement/docs/FEATURE_referential_integrity_validation.md">https://raw.githubusercontent.com/pranashr228-la/data-validation-accelerator/refs/heads/ph...</a></div>
-</td></tr><tr>
-<td class="hr"><hr></td>
-</tr>
-<tr><td class="eu_co ln">
-<a href="https://nttdatagroup.sharepoint.com/sites/SRVS-IT-INFOSEC/Policy_Documents/InfoSec.POL.D02.AssetMgmt.pdf">
-See our internet use policy.
-</a>
-</td></tr>
-<tr><td class="eu_co fo">
-Need help? Contact our support team at +1.888.532.6021, <a href="mailto:ITServicedesk@nttdata.com">ITServicedesk@nttdata.com</a>
-</td></tr>
-<tr><td class="eu_co st">
-<span class="s_img"></span>
-Your organization has selected Zscaler to protect you from internet threats.
-</td></tr>
-</tbody></table>
-<!--/locale en_US-->
-</td></tr>
-</tbody></table>
-</div>
-</div>
-</body></html>
-<!-- 107793 1 2 0 1785823150 192 https://raw.githubusercontent.com/pranashr228-la/data-validation-accelerator/refs/heads/phase-1-enhancement/docs/FEATURE_referential_integrity_validation.md -->
+## Status
+
+| Field      | Value                                         |
+| ---------- | ---------------------------------------------- |
+| Priority   | High                                            |
+| Status     | Approved — Ready for Implementation             |
+| Complexity | Medium-Large                                    |
+| Output     | New validation type: `referential_integrity`    |
+
+---
+
+## Problem
+
+DVA validates source-vs-target for one dataset at a time (count, duplicate-key, row-hash, aggregate,
+statistical, data-quality, schema-contract). None of these prove the target warehouse is internally
+usable: if a fact table's key doesn't exist in its related dimension (or a dimension's key doesn't
+exist in another dimension it depends on), business reports can silently lose or misclassify rows,
+even when every existing check passes.
+
+Add a validation that checks whether configured child keys in one dataset exist in configured
+parent keys from another dataset already defined in the same config.
+
+## Goal
+
+* Check configured cross-dataset relationships (e.g. `fact_sales.ProductKey -> dim_product.ProductKey`).
+* Run as part of the normal validation plan when enabled in YAML.
+* Report missing parent keys and affected child-row counts; persist to Postgres; surface in CLI and Superset.
+* Stay fully backward compatible and opt-in.
+
+## In Scope
+
+New `referential_integrity` validation type · YAML config model · validation engine · result model
++ Postgres persistence (new migration + views) · CLI reporting · Superset visibility · unit/integration
+tests · docs update.
+
+## Out of Scope
+
+CSV export · automatic relationship discovery or FK inference from catalogs · enforcing physical DB
+constraints · changing existing validation behavior/results · requiring every dataset to define
+relationships · orchestrator/connector redesign · replacing schema-contract validation.
+
+## Grain
+
+One result row per configured relationship per child dataset per run, containing: run id, child
+dataset, relationship name, child side/columns, parent dataset, parent side/columns, status,
+missing-key count, affected-row count, sample missing keys, optional details/error.
+
+---
+
+## Functional Requirements
+
+### FR-01: YAML Configuration
+
+```yaml
+validations:
+  referential_integrity:
+    enabled: true
+    max_samples: 50
+    null_handling: ignore
+    relationships:
+      - name: product_key_exists
+        child_column: ProductKey        # or child_columns: [...] for composite
+        parent_dataset: dim_product_validation
+        parent_column: ProductKey       # or parent_columns: [...] for composite
+```
+Reject a relationship that mixes single-column and composite-column syntax.
+
+### FR-02: Backward Compatibility
+Configs without `referential_integrity` load and run unchanged. Disabled by default unless
+explicitly enabled with at least one relationship. Existing CLI/tables/dashboards keep working.
+
+### FR-03: Relationship Reference Validation
+Reject: unknown `parent_dataset`, empty `name`, mixed single/composite syntax, mismatched composite
+list lengths, and self-references (a dataset naming itself as its own parent — out of scope).
+Column *existence* is checked at runtime via the existing schema-probe, not at parse time.
+
+### FR-04: Child and Parent Sides
+Default and only supported value for now: `target` vs `target` (both `child_side` and
+`parent_side`). Any other value must be rejected with a clear error.
+
+### FR-05: Validation Logic
+Per relationship: build child/parent SQL from each dataset's target object/query → select distinct
+keys on each side → find child keys missing from parent → count distinct missing keys and affected
+child rows → sample up to `max_samples` → write one result row. `PASS` if none missing, `FAIL` if
+any missing, `ERROR` on a SQL/connector failure (dataset status follows existing error rules).
+
+### FR-06: Null Handling
+`null_handling: ignore` (default) — null child keys don't fail. `fail` — nulls count as missing.
+Applies the same way to composite keys with any null component.
+
+### FR-07: SQL Generation
+Use existing dialect quoting and `build_base_sql()`; prefer a portable `LEFT JOIN ... WHERE parent
+IS NULL` anti-join over dialect-specific syntax. Write generated SQL (when
+`execution.write_generated_sql` is true) as
+`<dataset>__referential_integrity_<relationship>_<child|parent|missing>.sql`.
+
+### FR-08: Result Persistence
+New migration `sql/postgres/003_referential_integrity.sql` (never edit 001/002) creating
+`dva.referential_integrity_results` with columns: `id, run_id, dataset_name, relationship_name,
+child_side, child_columns, parent_dataset_name, parent_side, parent_columns, status,
+missing_key_count, affected_row_count, sample_missing_keys, details`. Index `run_id`,
+`dataset_name`, `parent_dataset_name`, `status`. Use text/JSON-text for column lists and samples.
+
+### FR-09: Views
+In the same or a follow-up migration: `dva.v_referential_integrity_failures` and
+`dva.v_chart_referential_integrity_results` (the latter joined with `dva.dataset_summary` for
+source/target connection and dataset status), matching the existing `v_chart_*` pattern.
+
+### FR-10: CLI Reporting
+Extend `dva results --summary`/detail output with a `-- Referential integrity --` section showing
+dataset, relationship, child/parent columns, missing-key count, affected-row count, status — visible
+without needing Superset.
+
+### FR-11: Superset Reporting
+Register `v_chart_referential_integrity_results` as a dataset; add a `Referential Integrity
+Failures` chart. Add it to whichever existing dashboard already presents table-level validation
+drift detail — identify that dashboard by inspecting the bootstrap script's existing dashboard
+definitions, not by assuming a fixed name. Don't touch unrelated charts. No CSV output.
+
+### FR-12: Validation Issues
+On failure, record an issue via the existing mechanism: `rule_type=referential_integrity`,
+`issue_type=missing_parent_keys`, `severity=HIGH` default, sample values = sampled missing keys.
+
+### FR-13: Execution Order & Scoping
+Insert after `row_hash`, before `aggregate`:
+`schema_contract → count → duplicate_keys → row_hash → referential_integrity → aggregate → statistical → data_quality`.
+Respect `--validations`/`--skip-validations`. Aliases: `ri`, `fk`, `foreign_keys`.
+
+### FR-14: Mandatory Runtime Verification
+Passing `dva validate-config` (or the project's equivalent structural/parse-only check) never
+satisfies this requirement by itself — that command only confirms the YAML parses; it opens no
+database connection and executes no SQL. Runtime verification requires actually executing the
+project's real run command (e.g. `dva run --config <real-config>`) against the real, live
+Postgres/Snowflake connections, so that at least one relationship reports `PASS` and at least one
+reports `FAIL` from real query results — covering every relationship added under FR-15, not just
+one dataset.
+
+If you have only run config validation and have not yet executed the real run command against live
+connections, you have not completed this requirement — do so next, in this same session.
+
+Before concluding any prerequisite (service, credential, tool) is unavailable: detect which
+container tool is actually installed (don't assume `docker` over `podman` or vice versa) and match
+against the service names the project's own orchestration file defines; retry with the other tool
+if one fails. A container already reported running/healthy counts as available even if a separate
+health check fails for an unrelated reason (wrong host/port/protocol in the check itself).
+
+Only report an item `Not verified` after genuinely attempting the above, stating exactly what's
+missing and what was tried. Report each runtime item (Postgres persistence, CLI, Superset) as
+`✅ Verified / ❌ Failed / ⚠️ Not verified / ⏭️ Skipped`, plus: config and command used, run id,
+relationships checked/passed/failed, a sample failure if present. Never present mocked-test success
+as live proof.
+
+### FR-15: Mandatory Full-Warehouse Coverage in the Real Configuration
+Configure this feature directly in the project's real, already-used config file — never a new
+demo/example file. Inspect **every** dataset in that file, fact-type and dimension-type alike, and
+identify columns that match another dataset's primary key by name — this covers both
+fact-to-dimension relationships and dimension-to-dimension relationships (e.g. a product dimension
+referencing a product-category dimension, or a customer dimension referencing a geography
+dimension). Add a `referential_integrity` relationship for every such discovered pair, except
+self-references (FR-03).
+
+Coverage must come from inspecting the actual file's datasets/primary keys/columns at
+implementation time — never from a fixed, pre-named list. Wiring up only one dataset while others
+have discoverable relationships does not satisfy this requirement. This discovery is a one-time
+config-authoring step, not the "automatic relationship discovery" that stays out of scope for the
+engine itself (NFR-02) — the engine still requires relationships explicitly listed in YAML.
+
+### FR-16: No Synthetic or Demo Verification Data
+Runtime verification uses only the real config and real connections from FR-15 — never a fabricated
+dataset or demo config created just to force a pass/fail. Any temporary data/config created during
+development (including rows in `dva.referential_integrity_results`) must be fully removed before
+completion is reported. Reported results must come only from a real run against the real config.
+
+### FR-17: Autonomous Environment Resolution
+Resolve environment issues (interpreter, venv, dependencies) yourself using whatever setup commands
+and interpreter/version files the project's own docs/packaging already define — never hand the user
+manual steps ("run this," "activate that," "change your Python version") as a substitute for doing
+it yourself. Never edit unrelated files (e.g. an existing CA bundle) to work around a
+network/TLS/proxy issue. If a genuine external blocker remains after a real attempt (network,
+firewall, missing credentials), stop and report it precisely as `Not verified` with the exact
+blocker and the exact external action needed — never work around it by hardcoding, patching
+unrelated files, or fabricating a result.
+
+### FR-18: Full-Configuration Runtime Execution
+Run the complete real config with the project's standard invocation — don't scope to a hand-picked
+dataset subset unless a real external blocker (FR-17) makes the full run impossible, in which case
+report exactly which datasets were excluded and why.
+
+---
+
+## Acceptance Criteria
+
+| ID | Acceptance Criterion |
+|---|---|
+| AC-01 | Configs without `referential_integrity` load/run unchanged. |
+| AC-02 | Unknown `parent_dataset` is rejected at config validation. |
+| AC-03 | Mismatched composite child/parent column counts are rejected. |
+| AC-04 | All child keys present in parent → `PASS`. |
+| AC-05 | Any missing child key → `FAIL`, with missing-key count, affected-row count, samples. |
+| AC-06 | Null child keys ignored by default; `null_handling: fail` counts them as missing. |
+| AC-07 | Composite-key relationships work and are tested. |
+| AC-08 | Generated SQL is written when `execution.write_generated_sql` is true. |
+| AC-09 | Results persist in `dva.referential_integrity_results`; failures create `rule_type=referential_integrity` issues. |
+| AC-10 | Failures are visible in CLI summary/detail; Superset bootstrap registers the new dataset/chart idempotently. |
+| AC-11 | `--validations`/`--skip-validations`/aliases (`ri`/`fk`/`foreign_keys`) work as expected. |
+| AC-12 | No existing validation type's behavior changes; all pre-existing tests pass unmodified. |
+| AC-13 | Unit tests cover config parsing, null handling, composite keys, persistence, CLI output. |
+| AC-14 | Runtime verification separates automated-test results from live results; a mocked-only check reports `Not verified`, never `Verified`. |
+| AC-15 | Runtime verification includes a per-item table (`Verified/Failed/Skipped/Not verified`) for Postgres persistence, CLI reporting, and Superset visibility, each with an actionable error if failed. |
+| AC-16 | Before any item is marked `Not verified`, the container tool actually available is detected and matched against the project's real service names — a running/healthy container is never marked unavailable just because the wrong tool/name was tried. |
+| AC-17 | `referential_integrity` relationships are added to the real, existing project config file only — never a new demo/example file. |
+| AC-18 | Every dataset (fact or dimension) with a discoverable FK relationship to another dataset already in the config is covered, found by inspecting the file's own datasets/keys — not a hardcoded list — and runtime verification reports per-dataset relationship counts so coverage is visible. |
+| AC-19 | Reported runtime results come only from a real run against the real config — no synthetic dataset/demo config is used, and any temporary test artifacts (data, config, DB rows) are fully cleaned up before completion. |
+| AC-20 | Environment setup (interpreter, venv, deps) is resolved autonomously, without manual steps handed to the user, and no unrelated files (e.g. CA bundle) are modified as a workaround; a genuine external blocker is reported precisely as `Not verified` with the exact blocker and required external action. |
+| AC-21 | The full real config is run (not a hand-picked `--datasets` subset) unless a real external blocker makes that impossible, in which case the reduced scope and reason are explicitly reported. |
+
+---
+
+## Non-Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| NFR-01 | Backward compatible; no automatic relationship discovery or FK inference; no new third-party dependencies. |
+| NFR-02 | Avoid fetching full parent/child datasets into Python — compute counts via SQL aggregation, sample only up to `max_samples`. |
+| NFR-03 | Query generation stays dialect-aware through existing dialect abstractions; error messages identify the relationship and dataset that failed. |
+| NFR-04 | No credentials, connection strings, or secrets in persisted details or CLI output. |
+| NFR-05 | Superset changes are idempotent under repeated bootstrap runs; result persistence is additive, non-destructive. |
+| NFR-06 | Runtime verification must not assume a specific container tool is installed — detect and use whichever is actually present. |
+| NFR-07 | Coverage decisions come from inspecting the real config file's datasets/keys/columns at implementation time — never a hardcoded list of names in the spec or the implementation. |
+| NFR-08 | Runtime verification must not depend on synthetic/demo/fabricated data left behind — clean up any temporary artifacts so persisted results reflect only real runs. |
+
+---
+
+## ⚠️ MANDATORY: This feature is not complete until live verification has run
+
+Writing code, passing unit tests, and confirming things compile are **not** completion. Running
+only `dva validate-config` (or an equivalent structural/parse-only check) is **not** completion
+either — that command never opens a live database connection or executes SQL, so it cannot produce
+a real `PASS`/`FAIL` referential-integrity result. Per FR-14 through FR-18 and AC-14 through AC-21,
+you must actually execute the project's real run command (e.g. `dva run --config <real-config>`)
+against the real, already-configured Postgres/Snowflake connections, and report the live
+`PASS`/`FAIL` results it produces — not ask the user whether you should, and not stop after
+implementation or after config validation alone. If you have finished writing code, or only run
+config validation, and have not yet executed the real run command against live connections, you
+are not done — proceed to do so now, in this same session, before reporting completion.
